@@ -18,10 +18,15 @@ export default function Header() {
         </nav>
 
         {/* CTA */}
-        <Link to="/onboarding" className="btn btn-primary public-header__cta">
-          Get Started
-          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_forward</span>
-        </Link>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <Link to="/auth?mode=login" className="btn btn-secondary public-header__cta" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.8)' }}>
+            Log In
+          </Link>
+          <Link to="/auth?mode=signup" className="btn btn-primary public-header__cta">
+            Sign Up
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_forward</span>
+          </Link>
+        </div>
       </div>
     </header>
   );

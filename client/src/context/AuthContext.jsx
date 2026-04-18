@@ -12,6 +12,8 @@ const MOCK_USER = {
   kycStatus: 'verified',
   entityType: 'individual',
   organization: 'Whitfield Capital Partners',
+  profileComplete: false,
+  profileCompletionScore: 20,
 };
 
 export function AuthProvider({ children }) {
@@ -67,7 +69,7 @@ export function AuthProvider({ children }) {
       // Fallback to mock for demo when backend is offline
       if (!err.response) {
         const mockToken = 'mock_jwt_' + Date.now();
-        const newUser = { ...MOCK_USER, ...formData };
+        const newUser = { ...MOCK_USER, ...formData, profileCompletionScore: 20, profileComplete: false };
         _persist(newUser, mockToken);
         return newUser;
       }
@@ -92,11 +94,19 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const updateProfile = useCallback((userData) => {
+    setUser((prev) => {
+      const updated = { ...prev, ...userData };
+      localStorage.setItem('cl_user', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
   const clearError = useCallback(() => setError(null), []);
 
   return (
     <AuthContext.Provider
-      value={{ user, token, isAuthenticated, loading, error, login, logout, register, clearError }}
+      value={{ user, token, isAuthenticated, loading, error, login, logout, register, updateProfile, clearError }}
     >
       {children}
     </AuthContext.Provider>

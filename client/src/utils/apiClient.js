@@ -19,7 +19,7 @@ apiClient.interceptors.response.use(
     if (err.response?.status === 401) {
       localStorage.removeItem('cl_token');
       localStorage.removeItem('cl_user');
-      window.location.href = '/onboarding';
+      window.location.href = '/auth';
     }
     return Promise.reject(err);
   }

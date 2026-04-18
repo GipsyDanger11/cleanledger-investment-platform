@@ -106,13 +106,13 @@ export default function LandingPage() {
               A digital ledger engineered like a premium timepiece — every capital event cryptographically recorded, every startup KYB-verified, every tranche DAO-governed.
             </p>
             <div className="landing__hero-ctas">
-              <Link to="/onboarding" className="btn landing__cta-primary">
-                Get Started
-                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_forward</span>
+              <Link to="/auth?mode=signup&role=startup" className="btn landing__cta-primary">
+                Launch as Startup
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>rocket_launch</span>
               </Link>
-              <a href="#architecture" className="btn btn-secondary landing__cta-secondary">
-                Explore Platform
-              </a>
+              <Link to="/auth?mode=signup&role=investor" className="btn btn-secondary landing__cta-secondary">
+                Join as Investor
+              </Link>
             </div>
           </div>
 
@@ -228,7 +228,7 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
-              <Link to="/onboarding" className="btn btn-primary" style={{ marginTop: 'var(--space-8)' }}>
+              <Link to="/auth" className="btn btn-primary" style={{ marginTop: 'var(--space-8)' }}>
                 Start Verification
                 <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_forward</span>
               </Link>

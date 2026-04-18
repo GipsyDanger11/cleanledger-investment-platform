@@ -3,17 +3,46 @@ const generateToken = require('../utils/generateToken');
 
 const register = async (req, res, next) => {
   try {
-    const { name, email, password, organization, entityType } = req.body;
+    const { name, email, password, role, organization, entityType, companyName, sector, fundingGoal, investmentFocus } = req.body;
+
     const existing = await User.findOne({ email });
     if (existing) {
       return res.status(409).json({ success: false, message: 'Email already registered.' });
     }
-    const user = await User.create({ name, email, password, organization, entityType });
+
+    const validRole = ['investor', 'startup'].includes(role) ? role : 'investor';
+
+    const userData = { name, email, password, role: validRole, organization, entityType };
+
+    // Add role-specific fields
+    if (validRole === 'startup') {
+      if (companyName) userData.companyName = companyName;
+      if (sector) userData.sector = sector;
+      if (fundingGoal) userData.fundingGoal = fundingGoal;
+    } else if (validRole === 'investor') {
+      if (investmentFocus) userData.investmentFocus = investmentFocus;
+    }
+
+    const user = await User.create(userData);
+
+    // Calculate initial profile score
+    user.calculateProfileScore();
+    await user.save();
+
     const token = generateToken(user._id, user.role);
     res.status(201).json({
       success: true,
       token,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role, entityType: user.entityType, kyc: user.kyc },
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        entityType: user.entityType,
+        kyc: user.kyc,
+        profileComplete: user.profileComplete,
+        profileCompletionScore: user.profileCompletionScore,
+      },
     });
   } catch (err) {
     next(err);
@@ -27,11 +56,26 @@ const login = async (req, res, next) => {
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
     }
+
+    // Recalculate profile score on login
+    user.calculateProfileScore();
+    await user.save();
+
     const token = generateToken(user._id, user.role);
     res.json({
       success: true,
       token,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role, organization: user.organization, entityType: user.entityType, kyc: user.kyc },
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        organization: user.organization,
+        entityType: user.entityType,
+        kyc: user.kyc,
+        profileComplete: user.profileComplete,
+        profileCompletionScore: user.profileCompletionScore,
+      },
     });
   } catch (err) {
     next(err);

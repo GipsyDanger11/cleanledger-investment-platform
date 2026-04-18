@@ -4,15 +4,17 @@ import { InvestmentProvider } from './context/InvestmentContext';
 import AppLayout from './components/layout/AppLayout';
 
 // Pages
-import LandingPage    from './pages/LandingPage';
-import Onboarding     from './pages/Onboarding';
-import Dashboard      from './pages/Dashboard';
-import Marketplace    from './pages/Marketplace';
-import StartupDetails from './pages/StartupDetails';
-import AuditTrail     from './pages/AuditTrail';
-import Portfolio      from './pages/Portfolio';
-import Settings       from './pages/Settings';
-import NotFound       from './pages/NotFound';
+import LandingPage        from './pages/LandingPage';
+import AuthPage           from './pages/AuthPage';
+import ProfileCompletion  from './pages/ProfileCompletion';
+import Onboarding         from './pages/Onboarding';
+import Dashboard          from './pages/Dashboard';
+import Marketplace        from './pages/Marketplace';
+import StartupDetails     from './pages/StartupDetails';
+import AuditTrail         from './pages/AuditTrail';
+import Portfolio          from './pages/Portfolio';
+import Settings           from './pages/Settings';
+import NotFound           from './pages/NotFound';
 
 export default function App() {
   return (
@@ -21,8 +23,10 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             {/* Public routes */}
-            <Route path="/"           element={<LandingPage />} />
-            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/"              element={<LandingPage />} />
+            <Route path="/auth"          element={<AuthPage />} />
+            <Route path="/profile-setup" element={<ProfileCompletion />} />
+            <Route path="/onboarding"    element={<Navigate to="/auth" replace />} />
 
             {/* Authenticated routes — wrapped in AppLayout (sidebar + bottom nav) */}
             <Route element={<AppLayout />}>

@@ -7,7 +7,7 @@ import './AppLayout.css';
 export default function AppLayout() {
   const { isAuthenticated } = useAuth();
 
-  if (!isAuthenticated) return <Navigate to="/onboarding" replace />;
+  if (!isAuthenticated) return <Navigate to="/auth" replace />;
 
   return (
     <div className="app-layout">

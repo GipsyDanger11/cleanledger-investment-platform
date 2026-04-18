@@ -10,6 +10,8 @@ const authRoutes      = require('./routes/authRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const startupRoutes   = require('./routes/startupRoutes');
 const auditRoutes     = require('./routes/auditRoutes');
+const voiceRoutes     = require('./routes/voiceRoutes');
+const profileRoutes   = require('./routes/profileRoutes');
 const errorHandler    = require('./middleware/errorHandler');
 
 const app = express();
@@ -42,6 +44,8 @@ app.use('/api/v1/auth',       authRoutes);
 app.use('/api/v1/dashboard',  dashboardRoutes);
 app.use('/api/v1/startups',   startupRoutes);
 app.use('/api/v1/audit',      auditRoutes);
+app.use('/api/v1/voice',      voiceRoutes);
+app.use('/api/v1/profile',    profileRoutes);
 
 // ── Health check ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
