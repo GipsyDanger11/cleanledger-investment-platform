@@ -27,7 +27,7 @@ const milestoneSchema = new mongoose.Schema({
   tranchePct:      { type: Number, default: 0, min: 0, max: 100 },
   status: {
     type: String,
-    enum: ['pending', 'in_progress', 'submitted', 'verified', 'released', 'missed'],
+    enum: ['pending', 'in_progress', 'submitted', 'verified', 'released', 'missed', 'complete'],
     default: 'pending',
   },
   proofUrl:      String,

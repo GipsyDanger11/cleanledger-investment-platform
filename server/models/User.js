@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema(
     name:         { type: String, required: true, trim: true },
     email:        { type: String, required: true, unique: true, lowercase: true, trim: true },
     password:     { type: String, required: true, minlength: 8, select: false },
-    role:         { type: String, enum: ['investor', 'startup', 'admin'], default: 'investor' },
+    role:         { type: String, enum: ['investor', 'startup', 'admin', 'founder'], default: 'investor' },
     organization: { type: String, trim: true },
     entityType:   { type: String, enum: ['individual', 'company', 'fund', 'spv'], default: 'individual' },
 
