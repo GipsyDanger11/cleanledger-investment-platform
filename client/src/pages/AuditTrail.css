@@ -1,5 +1,5 @@
 /* ── Audit Trail ───────────────────────────────────────────── */
-.audit-trail {}
+.audit-trail { padding-bottom: var(--space-8); }
 
 .audit-trail__filters {
   display: flex;

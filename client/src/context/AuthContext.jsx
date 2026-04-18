@@ -3,7 +3,7 @@ import apiClient from '../utils/apiClient';
 
 const AuthContext = createContext(null);
 
-// Mock user kept as demo fallback when backend is not available
+// Mock users kept as demo fallback when backend is not available
 const MOCK_USER = {
   id: 'usr_001',
   email: 'james.whitfield@capital.com',
@@ -12,9 +12,29 @@ const MOCK_USER = {
   kycStatus: 'verified',
   entityType: 'individual',
   organization: 'Whitfield Capital Partners',
-  profileComplete: false,
-  profileCompletionScore: 20,
+  profileComplete: true,
+  profileCompletionScore: 82,
 };
+
+const MOCK_FOUNDER = {
+  id: 'usr_002',
+  email: 'priya.mehta@aurawind.com',
+  name: 'Priya Mehta',
+  role: 'founder',
+  kycStatus: 'verified',
+  entityType: 'company',
+  organization: 'Aura Wind Energy',
+  profileComplete: true,
+  profileCompletionScore: 94,
+  startupId: 'startup_001',
+};
+
+// Helper: detect if credentials match a known demo account
+function pickMockUser(email) {
+  const e = (email || '').toLowerCase();
+  if (e.includes('founder') || e.includes('startup') || e.includes('priya') || e.includes('aura')) return MOCK_FOUNDER;
+  return MOCK_USER;
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(
@@ -46,7 +66,7 @@ export function AuthProvider({ children }) {
       // Fallback to mock for demo when backend is offline
       if (!err.response) {
         const mockToken = 'mock_jwt_' + Date.now();
-        const loggedInUser = { ...MOCK_USER, email };
+        const loggedInUser = { ...pickMockUser(email), email };
         _persist(loggedInUser, mockToken);
         return loggedInUser;
       }
@@ -69,7 +89,8 @@ export function AuthProvider({ children }) {
       // Fallback to mock for demo when backend is offline
       if (!err.response) {
         const mockToken = 'mock_jwt_' + Date.now();
-        const newUser = { ...MOCK_USER, ...formData, profileCompletionScore: 20, profileComplete: false };
+        const base = pickMockUser(formData.email);
+        const newUser = { ...base, ...formData, profileCompletionScore: 20, profileComplete: false };
         _persist(newUser, mockToken);
         return newUser;
       }

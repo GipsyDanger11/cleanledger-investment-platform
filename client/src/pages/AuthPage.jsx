@@ -194,6 +194,18 @@ export default function AuthPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  const fillDemo = (type) => {
+    setMode('login');
+    setError('');
+    if (type === 'investor') {
+      setEmail('james.whitfield@capital.com');
+      setPassword('Investor1234!');
+    } else {
+      setEmail('priya.mehta@aurawind.com');
+      setPassword('Founder1234!');
+    }
+  };
   const [confirmPassword, setConfirmPassword] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [sector, setSector] = useState('');
@@ -441,6 +453,28 @@ export default function AuthPage() {
           ) : (
             <>Already have an account?{' '}<button className="auth-toggle__link" onClick={() => setMode('login')}>Log In</button></>
           )}
+        </div>
+
+        {/* Demo credentials panel */}
+        <div className="auth-demo-panel">
+          <div className="auth-demo-panel__label">🧪 Demo Quick Login</div>
+          <div className="auth-demo-panel__row">
+            <button className="auth-demo-btn auth-demo-btn--investor" onClick={() => fillDemo('investor')}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>account_balance_wallet</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 12 }}>Investor View</div>
+                <div style={{ fontSize: 10, opacity: 0.75 }}>James Whitfield</div>
+              </div>
+            </button>
+            <button className="auth-demo-btn auth-demo-btn--founder" onClick={() => fillDemo('founder')}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>business_center</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 12 }}>Founder View</div>
+                <div style={{ fontSize: 10, opacity: 0.75 }}>Priya Mehta · Aura Wind Energy</div>
+              </div>
+            </button>
+          </div>
+          <p className="auth-demo-panel__note">Works offline — no backend needed for demo</p>
         </div>
       </div>
 

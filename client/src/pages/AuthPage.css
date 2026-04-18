@@ -548,3 +548,59 @@
   .auth-row { grid-template-columns: 1fr; }
   .auth-container { padding: 0 16px; }
 }
+
+/* ── Demo Panel ── */
+.auth-demo-panel {
+  margin-top: 20px;
+  background: #F8F9FC;
+  border: 1px solid #E0E7FF;
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+}
+
+.auth-demo-panel__label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9CA3AF;
+  margin-bottom: 10px;
+}
+
+.auth-demo-panel__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.auth-demo-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.auth-demo-btn--investor {
+  background: #EEF2FF;
+  color: #4338CA;
+}
+.auth-demo-btn--investor:hover { background: #E0E7FF; transform: translateY(-1px); }
+
+.auth-demo-btn--founder {
+  background: #D1FAE5;
+  color: #065F46;
+}
+.auth-demo-btn--founder:hover { background: #A7F3D0; transform: translateY(-1px); }
+
+.auth-demo-panel__note {
+  font-size: 10px;
+  color: #9CA3AF;
+  margin: 10px 0 0;
+}

@@ -166,6 +166,19 @@
   font-weight: 700;
   color: #FFFFFF;
   cursor: default;
+  border: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+
+/* Investor — indigo ring */
+.sidebar__avatar--investor {
+  border-color: rgba(199, 210, 254, 0.6);
+}
+
+/* Founder — green ring */
+.sidebar__avatar--founder {
+  border-color: rgba(110, 231, 183, 0.7);
+  background: rgba(16, 185, 129, 0.3);
 }
 
 .sidebar__logout {

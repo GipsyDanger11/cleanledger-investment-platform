@@ -1,5 +1,5 @@
 /* ── Marketplace ───────────────────────────────────────────── */
-.marketplace {}
+.marketplace { padding-bottom: var(--space-8); }
 
 /* Filters */
 .marketplace__filters {

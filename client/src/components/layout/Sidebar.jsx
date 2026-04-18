@@ -2,20 +2,33 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './Sidebar.css';
 
-const NAV_ITEMS = [
+const INVESTOR_NAV = [
   { icon: 'dashboard',       label: 'Dashboard',    to: '/dashboard'    },
   { icon: 'storefront',      label: 'Marketplace',  to: '/marketplace'  },
   { icon: 'pie_chart',       label: 'Portfolio',    to: '/portfolio'    },
   { icon: 'account_balance', label: 'Ledger',       to: '/ledger'       },
   { icon: 'savings',         label: 'Funds',        to: '/funds'        },
   { icon: 'flag',            label: 'Milestones',   to: '/milestones'   },
-  { icon: 'forum',           label: 'Communicate',  to: '/communicate'  },
+  { icon: 'hub',             label: 'Communicate',  to: '/communicate'  },
+  { icon: 'settings',        label: 'Settings',     to: '/settings'     },
+];
+
+const FOUNDER_NAV = [
+  { icon: 'dashboard',       label: 'Dashboard',    to: '/dashboard'    },
+  { icon: 'storefront',      label: 'Marketplace',  to: '/marketplace'  },
+  { icon: 'savings',         label: 'Funds',        to: '/funds'        },
+  { icon: 'flag',            label: 'Milestones',   to: '/milestones'   },
+  { icon: 'hub',             label: 'Communicate',  to: '/communicate'  },
+  { icon: 'account_balance', label: 'Ledger',       to: '/ledger'       },
   { icon: 'settings',        label: 'Settings',     to: '/settings'     },
 ];
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const isFounder = user?.role === 'founder';
+
+  const NAV_ITEMS = isFounder ? FOUNDER_NAV : INVESTOR_NAV;
 
   const handleLogout = async () => {
     await logout();
@@ -52,11 +65,11 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* User Avatar + Logout */}
+      {/* User Avatar + Role badge + Logout */}
       <div className="sidebar__footer">
         <div
-          className="sidebar__avatar"
-          title={user?.name || 'User'}
+          className={`sidebar__avatar sidebar__avatar--${isFounder ? 'founder' : 'investor'}`}
+          title={`${user?.name || 'User'} (${isFounder ? 'Founder' : 'Investor'})`}
           aria-label={`Logged in as ${user?.name || 'User'}`}
         >
           {(user?.name || 'U')[0].toUpperCase()}
@@ -74,3 +87,4 @@ export default function Sidebar() {
     </aside>
   );
 }
+

@@ -164,11 +164,28 @@ async function seed() {
     entityType: 'individual',
     kyc: { status: 'verified', verifiedAt: new Date() },
     notifications: [
-      { message: 'Aura Wind Energy — Phase 1 milestone verified and closed.', icon: 'verified', read: false },
-      { message: 'HydroClear Technologies KYB status updated: Verified.',     icon: 'shield',   read: false },
+      { message: 'Aura Wind Energy — Phase 2 voting window is open (18h remaining). Cast your vote!', icon: 'how_to_vote', read: false },
+      { message: 'Aura Wind Energy submitted proof for Phase 2: Turbine Procurement.', icon: 'flag', read: false },
       { message: 'Capital release of $800,000 recorded on the immutable ledger.', icon: 'account_balance', read: true },
-      { message: 'DAO vote for Aura Wind Energy Phase 2 is now open.',        icon: 'how_to_vote', read: true },
+      { message: 'DAO vote for Aura Wind Energy Phase 2 is now open.', icon: 'how_to_vote', read: true },
       { message: 'ESG Audit report available for HydroClear Technologies.',   icon: 'eco',      read: true },
+    ],
+  });
+
+  // Create demo founder (startup owner)
+  const founder = await User.create({
+    name: 'Priya Mehta',
+    email: 'priya.mehta@aurawind.com',
+    password: 'Founder1234!',
+    role: 'founder',
+    organization: 'Aura Wind Energy',
+    entityType: 'company',
+    kyc: { status: 'verified', verifiedAt: new Date() },
+    notifications: [
+      { message: '2 votes received for Phase 2 milestone. Currently: 1 approved, 1 rejected.', icon: 'how_to_vote', read: false },
+      { message: 'New question from an anonymous investor about grid connection delays.', icon: 'forum', read: false },
+      { message: '$800,000 Phase 1 tranche released to your account (Block #1042).', icon: 'account_balance', read: true },
+      { message: 'Your announcement was seen by 47 investors. 12 found it helpful.', icon: 'campaign', read: true },
     ],
   });
 
@@ -235,8 +252,13 @@ async function seed() {
 
   console.log('\n🎉 Seed complete!');
   console.log('─────────────────────────────────────');
-  console.log('Admin:    admin@cleanledger.io      / Admin1234!');
+  console.log('Admin:    admin@cleanledger.io       / Admin1234!');
   console.log('Investor: james.whitfield@capital.com / Investor1234!');
+  console.log('Founder:  priya.mehta@aurawind.com   / Founder1234!');
+  console.log('─────────────────────────────────────');
+  console.log('Frontend demo (offline mode):');
+  console.log('  Investor: any email NOT containing founder/priya/aura');
+  console.log('  Founder:  email containing founder / priya / aura');
   console.log('─────────────────────────────────────');
   await mongoose.disconnect();
   process.exit(0);

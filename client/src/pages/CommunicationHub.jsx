@@ -1,327 +1,630 @@
-import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useInvestment } from '../context/InvestmentContext';
 import { useAuth } from '../context/AuthContext';
-import apiClient from '../utils/apiClient';
 import './CommunicationHub.css';
 
 const TABS = [
-  { id: 'qa',            label: 'Q&A',           icon: 'forum' },
-  { id: 'announcements', label: 'Announcements',  icon: 'campaign' },
+  { id: 'qa',            label: 'Q&A',            icon: 'forum',    desc: 'Anonymous Q&A' },
+  { id: 'announcements', label: 'Announcements',  icon: 'campaign', desc: 'Official updates' },
+  { id: 'milestones',    label: 'Milestone Chat',icon: 'flag',      desc: 'Voting comments' },
+  { id: 'notifications', label: 'Notifications', icon: 'notifications', desc: 'Push alerts' },
 ];
 
+const STARTUP_OPTIONS = [
+  { id: 'startup_001', name: 'Aura Wind Energy' },
+  { id: 'startup_002', name: 'Solaris Grid Systems' },
+  { id: 'startup_003', name: 'HydroClear Technologies' },
+  { id: 'startup_004', name: 'Verdant Carbon Labs' },
+  { id: 'startup_005', name: 'ThermaVault Energy' },
+  { id: 'startup_006', name: 'AquaTrace Monitoring' },
+];
+
+const NOTIF_TYPE_COLOR = {
+  vote:      { bg: '#EDE9FE', color: '#6D28D9', icon: 'how_to_vote' },
+  milestone: { bg: '#FEF3C7', color: '#D97706', icon: 'flag' },
+  qa:        { bg: '#DBEAFE', color: '#1D4ED8', icon: 'forum' },
+  ledger:    { bg: '#D1FAE5', color: '#065F46', icon: 'receipt_long' },
+  kyb:       { bg: '#D1FAE5', color: '#065F46', icon: 'verified_user' },
+  esg:       { bg: '#ECFDF5', color: '#059669', icon: 'eco' },
+  announce:  { bg: '#FEE2E2', color: '#DC2626', icon: 'campaign' },
+  profile:   { bg: '#E0E7FF', color: '#4338CA', icon: 'person' },
+  fund:      { bg: '#FEF9C3', color: '#CA8A04', icon: 'account_balance' },
+  default:   { bg: '#F3F4F6', color: '#374151', icon: 'notifications' },
+};
+
+function formatDate(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  const now = new Date();
+  const diff = now - dt;
+  if (diff < 60000) return 'Just now';
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+  return dt.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+}
+
 export default function CommunicationHub() {
-  const { id: startupIdParam } = useParams();
   const { user } = useAuth();
-  const [startupId, setStartupId] = useState(startupIdParam || null);
-  const [startupName, setStartupName] = useState('');
-  const [isOwner, setIsOwner] = useState(false);
-  const [tab, setTab] = useState('qa');
-  const [loading, setLoading] = useState(true);
-  const [qa, setQA] = useState([]);
-  const [announcements, setAnnouncements] = useState([]);
-  const [questionText, setQuestionText] = useState('');
-  const [isAnonymous, setIsAnonymous] = useState(false);
-  const [announcementText, setAnnouncementText] = useState('');
-  const [pinAnnouncement, setPinAnnouncement] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [msg, setMsg] = useState('');
-  const [answeringId, setAnsweringId] = useState(null);
-  const [answerText, setAnswerText] = useState('');
+  const {
+    startups,
+    investorNotifications,
+    founderNotifications,
+    addQuestion,
+    answerQuestion,
+    postAnnouncement,
+    castVote,
+    addMilestoneComment,
+  } = useInvestment();
 
-  // Load startup identity
-  useEffect(() => {
-    const init = async () => {
-      try {
-        let sid = startupIdParam;
-        if (!sid) {
-          const me = await apiClient.get('/startups/me/profile');
-          sid = me.data.data._id;
-          setIsOwner(true);
-          setStartupName(me.data.data.name);
-        } else {
-          const s = await apiClient.get(`/startups/${sid}`);
-          setStartupName(s.data.data.name);
-          setIsOwner(s.data.data.createdBy === user?._id);
-        }
-        setStartupId(sid);
-      } catch { /* ignore */ }
-      finally { setLoading(false); }
-    };
-    init();
-  }, [startupIdParam]);
+  const [tab, setTab]                     = useState('qa');
+  const [selectedStartupId, setSelectedStartupId] = useState('startup_001');
+  const [questionText, setQuestionText]   = useState('');
+  const [isAnonymous, setIsAnonymous]     = useState(false);
+  const [answeringId, setAnsweringId]     = useState(null);
+  const [answerText, setAnswerText]       = useState('');
+  const [annText, setAnnText]             = useState('');
+  const [pinAnn, setPinAnn]               = useState(false);
+  const [milestoneCommentText, setMilestoneCommentText] = useState('');
+  const [commentMilestoneId, setCommentMilestoneId]     = useState(null);
+  const [commentAnonymous, setCommentAnonymous]         = useState(false);
+  const [msg, setMsg]                     = useState('');
+  const [submitting, setSubmitting]       = useState(false);
+  const [notifFilter, setNotifFilter]     = useState('all');
+  const [readNotifs, setReadNotifs]       = useState(new Set());
 
-  // Fetch Q&A and announcements
-  const fetchQA = async (sid) => {
-    try {
-      const res = await apiClient.get(`/startups/${sid}/qa`);
-      setQA(res.data.data || []);
-    } catch { /* silent */ }
-  };
+  const isFounder = user?.role === 'founder';
 
-  const fetchAnnouncements = async (sid) => {
-    try {
-      const res = await apiClient.get(`/startups/${sid}/announcements`);
-      setAnnouncements(res.data.data || []);
-    } catch { /* silent */ }
-  };
+  const startup = startups.find(s => s.id === selectedStartupId) || startups[0];
+  const qa            = startup?.qa || [];
+  const announcements = startup?.announcements || [];
+  const milestones    = startup?.milestones || [];
+  const notifications = isFounder ? founderNotifications : investorNotifications;
 
-  useEffect(() => {
-    if (!startupId) return;
-    fetchQA(startupId);
-    fetchAnnouncements(startupId);
-    // Poll every 30 seconds (G3 notification engine)
-    const interval = setInterval(() => {
-      fetchQA(startupId);
-      fetchAnnouncements(startupId);
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [startupId]);
+  const unansweredCount = qa.filter(q => !q.isAnswered).length;
+  const unreadCount = notifications.filter(n => !n.read && !readNotifs.has(n.id)).length;
+
+  const filteredNotifs = notifFilter === 'all'
+    ? notifications
+    : notifications.filter(n => n.type === notifFilter);
 
   const handlePostQuestion = async () => {
     if (!questionText.trim()) return;
-    setSubmitting(true); setMsg('');
-    try {
-      await apiClient.post(`/startups/${startupId}/qa`, {
-        question: questionText.trim(), isAnonymous,
-      });
-      setMsg('Question submitted!');
-      setQuestionText('');
-      await fetchQA(startupId);
-    } catch (err) { setMsg(err.response?.data?.message || 'Failed to submit.'); }
-    finally { setSubmitting(false); }
+    setSubmitting(true);
+    addQuestion(selectedStartupId, { question: questionText.trim(), isAnonymous, authorName: user?.name || 'Investor' });
+    setMsg('Question posted!');
+    setQuestionText('');
+    setIsAnonymous(false);
+    setTimeout(() => setMsg(''), 3000);
+    setSubmitting(false);
   };
 
   const handleAnswer = async (qid) => {
     if (!answerText.trim()) return;
     setSubmitting(true);
-    try {
-      await apiClient.post(`/startups/${startupId}/qa/${qid}/answer`, { answer: answerText.trim() });
-      setAnsweringId(null); setAnswerText('');
-      await fetchQA(startupId);
-    } catch { /* silent */ }
-    finally { setSubmitting(false); }
+    answerQuestion(selectedStartupId, qid, answerText.trim());
+    setAnsweringId(null);
+    setAnswerText('');
+    setMsg('Answer posted!');
+    setTimeout(() => setMsg(''), 3000);
+    setSubmitting(false);
   };
 
-  const handlePostAnnouncement = async () => {
-    if (!announcementText.trim()) return;
-    setSubmitting(true); setMsg('');
-    try {
-      await apiClient.post(`/startups/${startupId}/announcements`, {
-        content: announcementText.trim(), pinned: pinAnnouncement,
-      });
-      setMsg('Announcement posted! Investors have been notified.');
-      setAnnouncementText(''); setPinAnnouncement(false);
-      await fetchAnnouncements(startupId);
-    } catch (err) { setMsg(err.response?.data?.message || 'Failed to post.'); }
-    finally { setSubmitting(false); }
+  const handlePostAnnouncement = () => {
+    if (!annText.trim()) return;
+    setSubmitting(true);
+    postAnnouncement(selectedStartupId, { content: annText.trim(), pinned: pinAnn });
+    setAnnText('');
+    setPinAnn(false);
+    setMsg('Announcement posted! Investors notified.');
+    setTimeout(() => setMsg(''), 3000);
+    setSubmitting(false);
   };
 
-  const formatDate = (d) => new Date(d).toLocaleDateString('en-IN', {
-    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-  });
+  const handleMilestoneComment = (milestoneId) => {
+    if (!milestoneCommentText.trim()) return;
+    setSubmitting(true);
+    addMilestoneComment(selectedStartupId, milestoneId, {
+      author: user?.name || 'Investor',
+      text: milestoneCommentText.trim(),
+      isAnonymous: commentAnonymous,
+      avatar: (user?.name || 'I').substring(0, 2).toUpperCase(),
+    });
+    setCommentMilestoneId(null);
+    setMilestoneCommentText('');
+    setCommentAnonymous(false);
+    setMsg('Comment added!');
+    setTimeout(() => setMsg(''), 3000);
+    setSubmitting(false);
+  };
 
-  if (loading) return <div className="ch-loading"><span className="material-symbols-outlined fd-spin">refresh</span> Loading...</div>;
+  const markAllRead = () => {
+    const allIds = new Set(notifications.map(n => n.id));
+    setReadNotifs(allIds);
+  };
 
   return (
-    <div className="communication-hub">
-      {/* ── Header ── */}
-      <div className="ch-header">
-        <div>
-          <h1 className="ch-header__title">Communication Hub</h1>
-          <p className="ch-header__sub">{startupName} — Investor Relations (G3)</p>
+    <div className="ch2-root">
+      {/* ── Sidebar ── */}
+      <aside className="ch2-sidebar">
+        <div className="ch2-sidebar__title">
+          <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#6366F1' }}>hub</span>
+          Communication Hub
+          <span className="ch2-tag">G3</span>
         </div>
-        <div className="ch-header__badge">
-          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>wifi</span>
-          Live · Auto-refresh 30s
-        </div>
-      </div>
 
-      {/* ── Tabs ── */}
-      <div className="ch-tabs">
-        {TABS.map(t => (
-          <button key={t.id} className={`ch-tab ${tab === t.id ? 'ch-tab--active' : ''}`}
-            onClick={() => { setTab(t.id); setMsg(''); }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>{t.icon}</span>
-            {t.label}
-            {t.id === 'qa' && qa.filter(q => !q.isAnswered).length > 0 && (
-              <span className="ch-badge">{qa.filter(q => !q.isAnswered).length}</span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {msg && (
-        <div className="ch-msg" style={{
-          background: msg.includes('!') ? '#E8F5E9' : '#FFEBEE',
-          color: msg.includes('!') ? '#2E7D32' : '#D32F2F',
-          border: `1px solid ${msg.includes('!') ? '#C8E6C9' : '#FFCDD2'}`,
-        }}>{msg}</div>
-      )}
-
-      {/* ══════════ Q & A TAB ══════════ */}
-      {tab === 'qa' && (
-        <div className="ch-content">
-          {/* Ask form (investors) */}
-          {!isOwner && (
-            <div className="ch-compose">
-              <h3 className="ch-compose__title">
-                <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#1976D2' }}>help</span>
-                Ask a Question
-              </h3>
-              <textarea className="ch-compose__textarea" rows={3}
-                placeholder="Ask investors or the startup team a question..."
-                value={questionText} onChange={e => setQuestionText(e.target.value)} />
-              <div className="ch-compose__footer">
-                <label className="ch-anon-toggle">
-                  <input type="checkbox" checked={isAnonymous}
-                    onChange={e => setIsAnonymous(e.target.checked)} />
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px', color: isAnonymous ? '#1976D2' : '#BDBDBD' }}>
-                    {isAnonymous ? 'visibility_off' : 'visibility'}
-                  </span>
-                  Post anonymously
-                </label>
-                <button className="ch-submit-btn" onClick={handlePostQuestion}
-                  disabled={submitting || !questionText.trim()}>
-                  {submitting ? 'Posting...' : 'Submit Question'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Q&A list */}
-          <div className="ch-list">
-            {qa.length === 0 && (
-              <div className="ch-empty">
-                <span className="material-symbols-outlined" style={{ fontSize: '48px', color: '#E0E0E0' }}>forum</span>
-                <p>No questions yet. Be the first to ask!</p>
-              </div>
-            )}
-            {qa.map((q) => (
-              <div key={q._id} className={`ch-qa-item ${q.isAnswered ? 'ch-qa-item--answered' : ''}`}>
-                <div className="ch-qa-item__question">
-                  <div className="ch-qa-item__meta">
-                    <div className="ch-avatar" style={{ background: q.isAnonymous ? '#F0F0F0' : '#E3F2FD' }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: '16px', color: q.isAnonymous ? '#9E9E9E' : '#1976D2' }}>
-                        {q.isAnonymous ? 'person_off' : 'person'}
-                      </span>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#333' }}>
-                        {q.isAnonymous ? 'Anonymous Investor' : (q.author?.name || 'Investor')}
-                      </div>
-                      <div style={{ fontSize: '11px', color: '#9E9E9E' }}>{formatDate(q.createdAt)}</div>
-                    </div>
-                    {!q.isAnswered && (
-                      <span style={{ marginLeft: 'auto', fontSize: '10px', background: '#FFF3E0', color: '#E65100', padding: '3px 8px', borderRadius: '999px', fontWeight: 700 }}>
-                        Awaiting Answer
-                      </span>
-                    )}
-                  </div>
-                  <p className="ch-qa-item__text">{q.question}</p>
-                </div>
-
-                {/* Answer */}
-                {q.isAnswered && (
-                  <div className="ch-qa-item__answer">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#2E7D32' }}>verified</span>
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#2E7D32' }}>Official Answer</span>
-                      <span style={{ fontSize: '11px', color: '#9E9E9E', marginLeft: 'auto' }}>{formatDate(q.answeredAt)}</span>
-                    </div>
-                    <p style={{ fontSize: '13px', color: '#333', lineHeight: 1.6, margin: 0 }}>{q.answer}</p>
-                  </div>
-                )}
-
-                {/* Answer form for owner */}
-                {isOwner && !q.isAnswered && (
-                  answeringId === q._id ? (
-                    <div className="ch-answer-form">
-                      <textarea className="ch-compose__textarea" rows={2}
-                        placeholder="Type your answer..."
-                        value={answerText} onChange={e => setAnswerText(e.target.value)} />
-                      <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                        <button className="ch-submit-btn" onClick={() => handleAnswer(q._id)} disabled={submitting || !answerText.trim()}>
-                          {submitting ? 'Posting...' : 'Post Answer'}
-                        </button>
-                        <button className="ch-cancel-btn" onClick={() => { setAnsweringId(null); setAnswerText(''); }}>
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button className="ch-answer-trigger" onClick={() => setAnsweringId(q._id)}>
-                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>reply</span>
-                      Answer this question
-                    </button>
-                  )
-                )}
-              </div>
+        {/* Startup selector */}
+        <div className="ch2-startup-select">
+          <label className="ch2-label">Viewing Startup</label>
+          <select
+            className="ch2-select"
+            value={selectedStartupId}
+            onChange={e => setSelectedStartupId(e.target.value)}
+          >
+            {STARTUP_OPTIONS.map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
             ))}
-          </div>
+          </select>
         </div>
-      )}
 
-      {/* ══════════ ANNOUNCEMENTS TAB ══════════ */}
-      {tab === 'announcements' && (
-        <div className="ch-content">
-          {/* Post form (owner only) */}
-          {isOwner && (
-            <div className="ch-compose">
-              <h3 className="ch-compose__title">
-                <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#1976D2' }}>campaign</span>
-                Post Announcement
-              </h3>
-              <textarea className="ch-compose__textarea" rows={4}
-                placeholder="Share an official update with all your investors..."
-                value={announcementText} onChange={e => setAnnouncementText(e.target.value)} />
-              <div className="ch-compose__footer">
-                <label className="ch-anon-toggle">
-                  <input type="checkbox" checked={pinAnnouncement}
-                    onChange={e => setPinAnnouncement(e.target.checked)} />
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px', color: pinAnnouncement ? '#1976D2' : '#BDBDBD' }}>push_pin</span>
-                  Pin this update
-                </label>
-                <button className="ch-submit-btn" onClick={handlePostAnnouncement}
-                  disabled={submitting || !announcementText.trim()}>
-                  {submitting ? 'Posting...' : '📢 Notify Investors'}
-                </button>
+        {/* Nav tabs */}
+        <nav className="ch2-nav">
+          {TABS.map(t => (
+            <button
+              key={t.id}
+              className={`ch2-nav-btn ${tab === t.id ? 'active' : ''}`}
+              onClick={() => { setTab(t.id); setMsg(''); }}
+            >
+              <span className="material-symbols-outlined ch2-nav-icon">{t.icon}</span>
+              <div className="ch2-nav-text">
+                <span className="ch2-nav-label">{t.label}</span>
+                <span className="ch2-nav-desc">{t.desc}</span>
               </div>
-            </div>
+              {t.id === 'qa' && unansweredCount > 0 && (
+                <span className="ch2-badge ch2-badge--orange">{unansweredCount}</span>
+              )}
+              {t.id === 'notifications' && unreadCount > 0 && (
+                <span className="ch2-badge ch2-badge--red">{unreadCount}</span>
+              )}
+            </button>
+          ))}
+        </nav>
+
+        {/* Live indicator */}
+        <div className="ch2-live-pill">
+          <span className="ch2-live-dot" />
+          Live · Local state
+        </div>
+      </aside>
+
+      {/* ── Main Content ── */}
+      <main className="ch2-content">
+        {/* Header */}
+        <div className="ch2-header">
+          <div>
+            <h1 className="ch2-header__title">
+              {TABS.find(t => t.id === tab)?.label}
+            </h1>
+            <p className="ch2-header__sub">
+              {startup?.name} — {TABS.find(t => t.id === tab)?.desc}
+            </p>
+          </div>
+          {startup?.verificationStatus === 'verified' && (
+            <span className="ch2-verified-badge">
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>verified</span>
+              KYB Verified
+            </span>
           )}
+        </div>
 
-          {/* Announcements list */}
-          <div className="ch-list">
-            {announcements.length === 0 && (
-              <div className="ch-empty">
-                <span className="material-symbols-outlined" style={{ fontSize: '48px', color: '#E0E0E0' }}>campaign</span>
-                <p>No announcements yet. Founders can post official updates here.</p>
-              </div>
-            )}
-            {announcements.map((a) => (
-              <div key={a._id} className={`ch-announcement ${a.pinned ? 'ch-announcement--pinned' : ''}`}>
-                <div className="ch-announcement__header">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {a.pinned && (
-                      <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#1976D2' }}>push_pin</span>
-                    )}
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#111' }}>{startupName}</span>
-                    <span style={{ fontSize: '10px', background: '#E3F2FD', color: '#1565C0', padding: '2px 8px', borderRadius: '999px', fontWeight: 700 }}>
-                      Official Update
+        {/* Toast message */}
+        {msg && (
+          <div className={`ch2-toast ${msg.includes('!') ? 'ch2-toast--success' : 'ch2-toast--warn'}`}>
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+              {msg.includes('!') ? 'check_circle' : 'info'}
+            </span>
+            {msg}
+          </div>
+        )}
+
+        {/* ══════ Q&A TAB ══════ */}
+        {tab === 'qa' && (
+          <div className="ch2-section">
+            {/* Post question (investors) */}
+            {!isFounder && (
+              <div className="ch2-compose-card">
+                <div className="ch2-compose-card__title">
+                  <span className="material-symbols-outlined" style={{ color: '#6366F1' }}>help</span>
+                  Ask a Question
+                  <span className="ch2-compose-tag">Anonymous option available</span>
+                </div>
+                <textarea
+                  className="ch2-textarea"
+                  rows={3}
+                  placeholder="Ask about financials, milestones, team, technology…"
+                  value={questionText}
+                  onChange={e => setQuestionText(e.target.value)}
+                />
+                <div className="ch2-compose-footer">
+                  <label className="ch2-toggle-label">
+                    <input
+                      type="checkbox"
+                      checked={isAnonymous}
+                      onChange={e => setIsAnonymous(e.target.checked)}
+                    />
+                    <span
+                      className="material-symbols-outlined"
+                      style={{ fontSize: 16, color: isAnonymous ? '#6366F1' : '#9CA3AF' }}
+                    >
+                      {isAnonymous ? 'visibility_off' : 'visibility'}
                     </span>
-                  </div>
-                  <span style={{ fontSize: '11px', color: '#9E9E9E' }}>{formatDate(a.createdAt)}</span>
+                    Post anonymously
+                  </label>
+                  <button
+                    className="ch2-btn ch2-btn--primary"
+                    onClick={handlePostQuestion}
+                    disabled={submitting || !questionText.trim()}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>send</span>
+                    Submit Question
+                  </button>
                 </div>
-                <p className="ch-announcement__body">{a.content}</p>
-                {a.likeCount > 0 && (
-                  <div style={{ fontSize: '11px', color: '#9E9E9E', marginTop: '8px' }}>
-                    👍 {a.likeCount} investor{a.likeCount > 1 ? 's' : ''} found this helpful
-                  </div>
-                )}
               </div>
-            ))}
+            )}
+
+            {/* Q&A list */}
+            <div className="ch2-list">
+              {qa.length === 0 && (
+                <div className="ch2-empty">
+                  <span className="material-symbols-outlined ch2-empty-icon">forum</span>
+                  <p>No questions yet. Be the first to ask!</p>
+                </div>
+              )}
+              {[...qa].reverse().map(q => (
+                <div key={q.id} className={`ch2-qa-item ${q.isAnswered ? 'ch2-qa-item--answered' : ''}`}>
+                  <div className="ch2-qa-item__header">
+                    <div className="ch2-avatar ch2-avatar--q">
+                      {q.isAnonymous ? '?' : (q.author || 'I').substring(0, 2).toUpperCase()}
+                    </div>
+                    <div className="ch2-qa-item__meta">
+                      <span className="ch2-qa-item__author">
+                        {q.isAnonymous ? 'Anonymous Investor' : (q.author || 'Investor')}
+                      </span>
+                      <span className="ch2-qa-item__time">{formatDate(q.createdAt)}</span>
+                    </div>
+                    <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                      {q.isAnonymous && (
+                        <span className="ch2-pill ch2-pill--grey">
+                          <span className="material-symbols-outlined" style={{ fontSize: 12 }}>visibility_off</span>
+                          Anonymous
+                        </span>
+                      )}
+                      {q.isAnswered
+                        ? <span className="ch2-pill ch2-pill--green">✓ Answered</span>
+                        : <span className="ch2-pill ch2-pill--orange">Awaiting Answer</span>
+                      }
+                    </div>
+                  </div>
+
+                  <p className="ch2-qa-item__question">{q.question}</p>
+
+                  {q.isAnswered && (
+                    <div className="ch2-qa-item__answer">
+                      <div className="ch2-qa-item__answer-header">
+                        <span className="material-symbols-outlined" style={{ fontSize: 15, color: '#059669' }}>verified</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#059669' }}>Official Answer</span>
+                        <span style={{ fontSize: 11, color: '#9CA3AF', marginLeft: 'auto' }}>{formatDate(q.answeredAt)}</span>
+                      </div>
+                      <p className="ch2-qa-item__answer-text">{q.answer}</p>
+                    </div>
+                  )}
+
+                  {/* Answer form — founder only */}
+                  {isFounder && !q.isAnswered && (
+                    answeringId === q.id ? (
+                      <div className="ch2-answer-form">
+                        <textarea
+                          className="ch2-textarea"
+                          rows={2}
+                          placeholder="Type your official answer…"
+                          value={answerText}
+                          onChange={e => setAnswerText(e.target.value)}
+                        />
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                          <button className="ch2-btn ch2-btn--primary" onClick={() => handleAnswer(q.id)} disabled={submitting || !answerText.trim()}>
+                            Post Answer
+                          </button>
+                          <button className="ch2-btn ch2-btn--ghost" onClick={() => { setAnsweringId(null); setAnswerText(''); }}>
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button className="ch2-answer-trigger" onClick={() => { setAnsweringId(q.id); setMsg(''); }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 15 }}>reply</span>
+                        Answer this question
+                      </button>
+                    )
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* ══════ ANNOUNCEMENTS TAB ══════ */}
+        {tab === 'announcements' && (
+          <div className="ch2-section">
+            {/* Post form — founder only */}
+            {isFounder && (
+              <div className="ch2-compose-card">
+                <div className="ch2-compose-card__title">
+                  <span className="material-symbols-outlined" style={{ color: '#EF4444' }}>campaign</span>
+                  Post Official Update
+                  <span className="ch2-compose-tag">Visible to all investors</span>
+                </div>
+                <textarea
+                  className="ch2-textarea"
+                  rows={4}
+                  placeholder="Share a milestone update, funding announcement, or news…"
+                  value={annText}
+                  onChange={e => setAnnText(e.target.value)}
+                />
+                <div className="ch2-compose-footer">
+                  <label className="ch2-toggle-label">
+                    <input
+                      type="checkbox"
+                      checked={pinAnn}
+                      onChange={e => setPinAnn(e.target.checked)}
+                    />
+                    <span className="material-symbols-outlined" style={{ fontSize: 16, color: pinAnn ? '#6366F1' : '#9CA3AF' }}>push_pin</span>
+                    Pin this update
+                  </label>
+                  <button
+                    className="ch2-btn ch2-btn--primary"
+                    onClick={handlePostAnnouncement}
+                    disabled={submitting || !annText.trim()}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>campaign</span>
+                    Notify All Investors
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="ch2-list">
+              {announcements.length === 0 && (
+                <div className="ch2-empty">
+                  <span className="material-symbols-outlined ch2-empty-icon">campaign</span>
+                  <p>No announcements yet. Founders can post official updates here.</p>
+                </div>
+              )}
+              {[...announcements].sort((a, b) => {
+                if (a.pinned && !b.pinned) return -1;
+                if (!a.pinned && b.pinned) return 1;
+                return new Date(b.createdAt) - new Date(a.createdAt);
+              }).map(ann => (
+                <div key={ann.id} className={`ch2-announcement ${ann.pinned ? 'ch2-announcement--pinned' : ''}`}>
+                  <div className="ch2-announcement__header">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {ann.pinned && (
+                        <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#6366F1' }}>push_pin</span>
+                      )}
+                      <div className="ch2-avatar ch2-avatar--startup">
+                        {startup?.name[0]}
+                      </div>
+                      <div>
+                        <span className="ch2-ann-name">{startup?.name}</span>
+                        <span className="ch2-pill ch2-pill--blue" style={{ marginLeft: 8 }}>Official Update</span>
+                      </div>
+                    </div>
+                    <span className="ch2-ann-time">{formatDate(ann.createdAt)}</span>
+                  </div>
+                  <p className="ch2-announcement__body">{ann.content}</p>
+                  {ann.likeCount > 0 && (
+                    <div className="ch2-ann-likes">
+                      👍 {ann.likeCount} investor{ann.likeCount > 1 ? 's' : ''} found this helpful
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ══════ MILESTONE COMMENTS TAB ══════ */}
+        {tab === 'milestones' && (
+          <div className="ch2-section">
+            <div className="ch2-info-banner">
+              <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#6366F1' }}>info</span>
+              Investors can comment on milestone proof submissions during the 48-hour voting window.
+            </div>
+
+            {milestones.map(m => {
+              const comments = m.comments || [];
+              const isVotingOpen = m.status === 'submitted';
+              const votes = m.votes || [];
+              const approvedVotes = votes.filter(v => v.approved).length;
+              const votePct = votes.length > 0 ? Math.round((approvedVotes / votes.length) * 100) : 0;
+
+              return (
+                <div key={m.id} className={`ch2-milestone-card ${isVotingOpen ? 'ch2-milestone-card--active' : ''}`}>
+                  <div className="ch2-milestone-card__header">
+                    <div className="ch2-milestone-badge-row">
+                      <span className="ch2-milestone-num">MILESTONE {m.phase}</span>
+                      <span className={`ch2-ms-status ch2-ms-status--${m.status}`}>
+                        {m.status.replace('_', ' ').toUpperCase()}
+                      </span>
+                      {isVotingOpen && (
+                        <span className="ch2-pill ch2-pill--orange">
+                          <span className="material-symbols-outlined" style={{ fontSize: 12 }}>timer</span>
+                          Voting Open
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="ch2-milestone-title">{m.title}</h3>
+                    <p className="ch2-milestone-desc">{m.description}</p>
+                  </div>
+
+                  {/* Vote progress for submitted milestones */}
+                  {m.status === 'submitted' && votes.length > 0 && (
+                    <div className="ch2-vote-bar-section">
+                      <div className="ch2-vote-bar-header">
+                        <span>Investor Votes</span>
+                        <span style={{ color: votePct >= 60 ? '#059669' : '#DC2626', fontWeight: 700 }}>
+                          {approvedVotes}/{votes.length} approved ({votePct}%)
+                          {votePct >= 60 ? ' ✓ Will pass' : ' — Needs 60%'}
+                        </span>
+                      </div>
+                      <div className="ch2-vote-bar-track">
+                        <div
+                          className="ch2-vote-bar-fill"
+                          style={{ width: `${votePct}%`, background: votePct >= 60 ? '#10B981' : '#EF4444' }}
+                        />
+                      </div>
+                      <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>
+                        Threshold: 60% approval required for tranche release
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Comments */}
+                  <div className="ch2-milestone-comments">
+                    <div className="ch2-comments-title">
+                      <span className="material-symbols-outlined" style={{ fontSize: 15 }}>chat_bubble</span>
+                      {comments.length} Comment{comments.length !== 1 ? 's' : ''}
+                    </div>
+                    {comments.map((c, ci) => (
+                      <div key={ci} className="ch2-comment">
+                        <div className="ch2-avatar ch2-avatar--sm">
+                          {c.isAnonymous ? '?' : (c.avatar || 'I')}
+                        </div>
+                        <div className="ch2-comment__body">
+                          <div className="ch2-comment__meta">
+                            <span className="ch2-comment__author">
+                              {c.isAnonymous ? 'Anonymous Investor' : c.author}
+                            </span>
+                            {c.isAnonymous && (
+                              <span className="ch2-pill ch2-pill--grey" style={{ fontSize: 9 }}>
+                                Anonymous
+                              </span>
+                            )}
+                            <span className="ch2-comment__time">{formatDate(c.date)}</span>
+                          </div>
+                          <p className="ch2-comment__text">{c.text}</p>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Add comment — investors, during voting window */}
+                    {!isFounder && isVotingOpen && (
+                      commentMilestoneId === m.id ? (
+                        <div className="ch2-comment-form">
+                          <textarea
+                            className="ch2-textarea"
+                            rows={2}
+                            placeholder="Add your comment on this milestone submission…"
+                            value={milestoneCommentText}
+                            onChange={e => setMilestoneCommentText(e.target.value)}
+                          />
+                          <div className="ch2-compose-footer" style={{ marginTop: 8 }}>
+                            <label className="ch2-toggle-label">
+                              <input
+                                type="checkbox"
+                                checked={commentAnonymous}
+                                onChange={e => setCommentAnonymous(e.target.checked)}
+                              />
+                              <span className="material-symbols-outlined" style={{ fontSize: 14, color: commentAnonymous ? '#6366F1' : '#9CA3AF' }}>
+                                {commentAnonymous ? 'visibility_off' : 'visibility'}
+                              </span>
+                              Anonymous
+                            </label>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              <button className="ch2-btn ch2-btn--primary ch2-btn--sm"
+                                onClick={() => handleMilestoneComment(m.id)}
+                                disabled={submitting || !milestoneCommentText.trim()}>
+                                Post Comment
+                              </button>
+                              <button className="ch2-btn ch2-btn--ghost ch2-btn--sm"
+                                onClick={() => { setCommentMilestoneId(null); setMilestoneCommentText(''); }}>
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <button className="ch2-add-comment-btn"
+                          onClick={() => setCommentMilestoneId(m.id)}>
+                          <span className="material-symbols-outlined" style={{ fontSize: 15 }}>add_comment</span>
+                          Add comment during voting window
+                        </button>
+                      )
+                    )}
+
+                    {!isVotingOpen && !isFounder && (
+                      <p className="ch2-voting-closed-note">
+                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>lock</span>
+                        Comments available during the 48-hour voting window only.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ══════ NOTIFICATIONS TAB ══════ */}
+        {tab === 'notifications' && (
+          <div className="ch2-section">
+            {/* Filter bar */}
+            <div className="ch2-notif-filters">
+              {['all','vote','milestone','qa','announce','ledger'].map(f => (
+                <button
+                  key={f}
+                  className={`ch2-pill-btn ${notifFilter === f ? 'active' : ''}`}
+                  onClick={() => setNotifFilter(f)}
+                >
+                  {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
+                </button>
+              ))}
+              <button className="ch2-btn ch2-btn--ghost ch2-btn--sm" style={{ marginLeft: 'auto' }} onClick={markAllRead}>
+                Mark all read
+              </button>
+            </div>
+
+            <div className="ch2-list">
+              {filteredNotifs.length === 0 && (
+                <div className="ch2-empty">
+                  <span className="material-symbols-outlined ch2-empty-icon">notifications_off</span>
+                  <p>No notifications match this filter.</p>
+                </div>
+              )}
+              {filteredNotifs.map(n => {
+                const meta = NOTIF_TYPE_COLOR[n.type] || NOTIF_TYPE_COLOR.default;
+                const isRead = n.read || readNotifs.has(n.id);
+                return (
+                  <div
+                    key={n.id}
+                    className={`ch2-notif-item ${!isRead ? 'ch2-notif-item--unread' : ''}`}
+                    onClick={() => setReadNotifs(prev => new Set([...prev, n.id]))}
+                  >
+                    <div className="ch2-notif-icon" style={{ background: meta.bg }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 18, color: meta.color }}>
+                        {meta.icon}
+                      </span>
+                    </div>
+                    <div className="ch2-notif-body">
+                      <p className="ch2-notif-message">{n.message}</p>
+                      <span className="ch2-notif-time">{n.time}</span>
+                    </div>
+                    {!isRead && <div className="ch2-unread-dot" />}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
