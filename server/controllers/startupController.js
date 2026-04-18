@@ -108,6 +108,11 @@ exports.getStartup = catchAsync(async (req, res) => {
     .populate('createdBy', 'name email avatarUrl')
     .lean();
   if (!startup) return apiError(res, 404, 'Startup not found');
+
+  const FounderProfile = require('../models/FounderProfile');
+  const founderProfile = await FounderProfile.findOne({ user: startup.createdBy }).lean();
+  startup.founderProfile = founderProfile || null;
+
   res.json({ success: true, data: startup });
 });
 

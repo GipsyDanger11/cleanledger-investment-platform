@@ -251,6 +251,72 @@ export default function StartupDetails() {
             </div>
           ) : null}
 
+          {/* Founder Profile */}
+          {startup.founderProfile && (
+            <div className="card">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--space-4)' }}>
+                <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)', fontSize: '24px', fontVariationSettings: "'FILL' 1" }}>person</span>
+                <h2 className="text-title" style={{ margin: 0 }}>Meet the Founder</h2>
+              </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+                <div>
+                  <h4 className="text-label-sm text-meta">Founder</h4>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
+                    <div className="startup-details__avatar" style={{ width: '40px', height: '40px', fontSize: '1rem', flexShrink: 0 }}>
+                      {startup.createdBy?.name?.[0] || '?'}
+                    </div>
+                    <div>
+                      <p className="text-body-md" style={{ fontWeight: 600, color: 'var(--color-on-surface)', margin: 0 }}>
+                        {startup.createdBy?.name || 'Anonymous'}
+                      </p>
+                      <p className="text-body-sm text-secondary" style={{ margin: 0 }}>{startup.founderProfile.founderTitle}</p>
+                    </div>
+                  </div>
+                </div>
+                {startup.founderProfile.founderLinkedIn && (
+                  <div>
+                    <h4 className="text-label-sm text-meta">LinkedIn</h4>
+                    <a href={startup.founderProfile.founderLinkedIn} target="_blank" rel="noopener noreferrer" className="text-body-sm" style={{ color: 'var(--color-primary)', display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none', margin: '8px 0 0' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>link</span>
+                      View Profile
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {startup.founderProfile.founderMissionStatement && (
+                <div style={{ marginBottom: 'var(--space-4)' }}>
+                  <h4 className="text-label-sm text-meta">Mission Statement</h4>
+                  <p className="text-body-sm text-secondary" style={{ margin: '8px 0 0', lineHeight: 1.6, fontStyle: 'italic', borderLeft: '3px solid var(--color-primary-container)', paddingLeft: '16px' }}>
+                    "{startup.founderProfile.founderMissionStatement}"
+                  </p>
+                </div>
+              )}
+
+              <div style={{ background: 'var(--color-surface-container)', padding: 'var(--space-4)', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                {startup.founderProfile.leadershipExperienceYears !== undefined && startup.founderProfile.leadershipExperienceYears !== null && (
+                  <div className="flex justify-between items-center" style={{ borderBottom: '1px solid var(--color-outline-variant)', paddingBottom: '8px' }}>
+                    <span className="text-body-sm text-secondary">Leadership Experience</span>
+                    <span className="text-label-md" style={{ fontWeight: 700 }}>{startup.founderProfile.leadershipExperienceYears} Years</span>
+                  </div>
+                )}
+                {startup.founderProfile.operatorBackground && (
+                  <div style={{ borderBottom: '1px solid var(--color-outline-variant)', paddingBottom: '8px' }}>
+                    <span className="text-body-sm text-secondary" style={{ display: 'block', marginBottom: '4px' }}>Operator Background</span>
+                    <p className="text-label-sm" style={{ margin: 0, fontWeight: 500, lineHeight: 1.5 }}>{startup.founderProfile.operatorBackground}</p>
+                  </div>
+                )}
+                {startup.founderProfile.priorExitsOrAdvisory && (
+                  <div style={{ paddingTop: '4px' }}>
+                    <span className="text-body-sm text-secondary" style={{ display: 'block', marginBottom: '4px' }}>Prior Exits & Advisory</span>
+                    <p className="text-label-sm" style={{ margin: 0, fontWeight: 500, lineHeight: 1.5 }}>{startup.founderProfile.priorExitsOrAdvisory}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Milestones */}
           <div className="card">
             <h2 className="text-title" style={{ marginBottom: 'var(--space-6)' }}>Milestone Roadmap</h2>

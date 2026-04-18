@@ -46,6 +46,9 @@ const FounderDashboard = () => {
           <p className="founder-dash__sub">{startup.name} · {startup.sector}</p>
         </div>
         <div style={{display:'flex', gap:'12px', alignItems:'center'}}>
+          <Link to={`/marketplace/${startup._id}`} className="btn btn-outline" style={{display:'flex', alignItems:'center', gap:'4px'}}>
+            <span className="material-symbols-outlined" style={{fontSize:'18px'}}>visibility</span> Public Profile
+          </Link>
           <Link to="/edit-profile" className="btn btn-secondary" style={{display:'flex', alignItems:'center', gap:'4px'}}>
             <span className="material-symbols-outlined" style={{fontSize:'18px'}}>edit</span> Edit Profile
           </Link>

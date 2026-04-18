@@ -26,7 +26,7 @@ founderProfileSchema.post('save', async function () {
   const stScore = st?.profileCompletionScore || 0;
   await User.findByIdAndUpdate(this.user, {
     profileCompletionScore: stScore,
-    profileComplete: !!st && stScore >= 70,
+    profileComplete: true, // Mark complete unconditionally when reaching end of wizard
   });
 });
 

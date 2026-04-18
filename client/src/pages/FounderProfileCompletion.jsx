@@ -187,7 +187,7 @@ export default function FounderProfileCompletion({ editing }) {
         });
         const pr = await apiClient.get('/startups/me/profile');
         const sc = pr.data.data.profileCompletionScore || 0;
-        updateProfile({ profileComplete: sc >= 70, profileCompletionScore: sc });
+        updateProfile({ profileComplete: true, profileCompletionScore: sc });
         
         // --- Trigger Auto Red Flags Generation ---
         if (startupId) {
@@ -723,7 +723,7 @@ export default function FounderProfileCompletion({ editing }) {
                   saving ||
                   !founder.founderTitle.trim() ||
                   !founder.founderLinkedIn.trim() ||
-                  founder.founderMissionStatement.trim().length < 30 ||
+                  !founder.founderMissionStatement.trim() ||
                   founder.leadershipExperienceYears === '' ||
                   Number(founder.leadershipExperienceYears) < 0
                 }
