@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 
 // ── Vote sub-schema ──────────────────────────────────────
 const voteSchema = new mongoose.Schema({
@@ -8,27 +7,39 @@ const voteSchema = new mongoose.Schema({
   votedAt:   { type: Date, default: Date.now },
 }, { _id: false });
 
+// ── Trust Score History (R4) ─────────────────────────────
+const trustHistorySchema = new mongoose.Schema({
+  score:           { type: Number, required: true },
+  profileScore:    Number,
+  milestoneScore:  Number,
+  fundAccuracy:    Number,
+  sentimentScore:  Number,
+  reason:          String,
+  recordedAt:      { type: Date, default: Date.now },
+}, { _id: false });
+
 // ── Milestone sub-schema (R3) ────────────────────────────
 const milestoneSchema = new mongoose.Schema({
   title:           { type: String, required: true },
   description:     String,
   targetDate:      Date,
   successCriteria: String,
-  tranchePct:      { type: Number, default: 0, min: 0, max: 100 }, // % of total funding
+  tranchePct:      { type: Number, default: 0, min: 0, max: 100 },
   status: {
     type: String,
     enum: ['pending', 'in_progress', 'submitted', 'verified', 'released', 'missed'],
     default: 'pending',
   },
-  proofUrl:      String,   // demo link / screenshot / metrics doc URL
+  proofUrl:      String,
   proofNote:     String,
   submittedAt:   Date,
-  voteDeadline:  Date,     // submittedAt + 48h
+  voteDeadline:  Date,
   votes:         [voteSchema],
   voteResult:    { type: String, enum: ['pending', 'passed', 'failed'], default: 'pending' },
   releasedAt:    Date,
   redFlagged:    { type: Boolean, default: false },
   trustPenalty:  { type: Number, default: 0 },
+  commentCount:  { type: Number, default: 0 },
 });
 
 // ── Expense sub-schema (R2) ──────────────────────────────
@@ -62,7 +73,7 @@ const teamMemberSchema = new mongoose.Schema({
 // ── Main Startup Schema ──────────────────────────────────
 const startupSchema = new mongoose.Schema(
   {
-    // ── Basic Info (R1) ──
+    // ── Basic Info (R1)
     name:        { type: String, required: true, trim: true },
     category: {
       type: String,
@@ -75,14 +86,13 @@ const startupSchema = new mongoose.Schema(
     tags:        [String],
     website:     String,
 
-    // ── R1 — Verified Profile ──
-    incorporationProofUrl: { type: String, trim: true },
-    businessPlanUrl:       { type: String, trim: true },
-    businessPlanSummary:   { type: String, trim: true },  // AI-generated
-    pitchDeckUrl:          { type: String, trim: true },
+    // ── R1 — Verified Profile
+    incorporationProofUrl: String,
+    businessPlanUrl:       String,
+    businessPlanSummary:   String,
+    pitchDeckUrl:          String,
     teamMembers:           [teamMemberSchema],
     profileCompletionScore:{ type: Number, default: 0, min: 0, max: 100 },
-
     verificationStatus: {
       type: String,
       enum: ['unverified', 'in_review', 'verified', 'rejected'],
@@ -94,12 +104,11 @@ const startupSchema = new mongoose.Schema(
       url:    String,
     }],
 
-    // ── R2 — Fund Tracking ──
-    fundingTarget:  { type: Number, required: true },
-    totalRaised:    { type: Number, default: 0 },
-    backers:        { type: Number, default: 0 },
-    fundingTimeline:{ type: String, enum: ['6 months','12 months','18 months','24 months'], default: '12 months' },
-
+    // ── R2 — Fund Tracking
+    fundingTarget:   { type: Number, required: true },
+    totalRaised:     { type: Number, default: 0 },
+    backers:         { type: Number, default: 0 },
+    fundingTimeline: { type: String, enum: ['6 months','12 months','18 months','24 months'], default: '12 months' },
     fundAllocation: {
       tech:       { planned: { type: Number, default: 0 }, actual: { type: Number, default: 0 } },
       marketing:  { planned: { type: Number, default: 0 }, actual: { type: Number, default: 0 } },
@@ -109,19 +118,31 @@ const startupSchema = new mongoose.Schema(
     expenses:       [expenseSchema],
     varianceAlerts: [varianceAlertSchema],
 
-    // ── R3 — Milestones ──
+    // ── R3 — Milestones
     milestones: [milestoneSchema],
 
-    // ── Trust & ESG Scores ──
-    trustScore: { type: Number, default: 50, min: 0, max: 100 },
-    esgScore:   { type: Number, default: 0, min: 0, max: 100 },
+    // ── R4 — Trust & Credibility Scoring
+    trustScore:        { type: Number, default: 50, min: 0, max: 100 },
+    riskLevel:         { type: String, enum: ['LOW', 'MEDIUM', 'HIGH'], default: 'MEDIUM' },
+    pitchQualityScore: { type: Number, default: 0, min: 0, max: 10 },
+    credibilityIndex:  { type: Number, default: 0, min: 0, max: 100 },
+    trustScoreHistory: [trustHistorySchema],
 
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    // Component scores (cached for display)
+    scoreComponents: {
+      profileScore:   { type: Number, default: 0 },
+      milestoneScore: { type: Number, default: 0 },
+      fundAccuracy:   { type: Number, default: 100 },
+      sentimentScore: { type: Number, default: 50 },
+    },
+
+    esgScore:   { type: Number, default: 0, min: 0, max: 100 },
+    createdBy:  { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
 );
 
-// ── Calculate profile completion score (R1) ──────────────
+// ── R1: Profile Completion Score ─────────────────────────
 startupSchema.methods.calculateProfileScore = function () {
   let score = 0;
   if (this.name) score += 10;
@@ -141,21 +162,73 @@ startupSchema.methods.calculateProfileScore = function () {
   return this.profileCompletionScore;
 };
 
-// ── Check fund variance alerts (R2) ─────────────────────
+// ── R4: Weighted Trust Score Computation ─────────────────
+startupSchema.methods.computeTrustScore = function (reason = 'auto') {
+  // 1. Profile completeness (25%)
+  const profileScore = this.profileCompletionScore || 0;
+
+  // 2. Milestone performance (30%) — % of milestones verified/released
+  const total = this.milestones.length;
+  const done  = this.milestones.filter(m => ['verified','released'].includes(m.status)).length;
+  const missed = this.milestones.filter(m => m.status === 'missed').length;
+  let milestoneScore = total > 0 ? Math.max(0, ((done - missed * 0.5) / total) * 100) : 50;
+  milestoneScore = Math.min(100, Math.max(0, milestoneScore));
+
+  // 3. Fund usage accuracy (25%) — penalise unresolved variance alerts
+  const unresolvedAlerts = (this.varianceAlerts || []).filter(a => !a.resolved).length;
+  const fundAccuracy = Math.max(0, 100 - unresolvedAlerts * 15);
+
+  // 4. Investor sentiment (20%) — % positive votes across all milestone votes
+  let totalVotes = 0, approvedVotes = 0;
+  for (const m of this.milestones) {
+    totalVotes   += (m.votes || []).length;
+    approvedVotes += (m.votes || []).filter(v => v.approved).length;
+  }
+  const sentimentScore = totalVotes > 0 ? (approvedVotes / totalVotes) * 100 : 50;
+
+  // Weighted composite
+  const trustScore = Math.round(
+    profileScore   * 0.25 +
+    milestoneScore * 0.30 +
+    fundAccuracy   * 0.25 +
+    sentimentScore * 0.20
+  );
+
+  // Risk level
+  const riskLevel = trustScore >= 70 ? 'LOW' : trustScore >= 40 ? 'MEDIUM' : 'HIGH';
+
+  // Credibility index: trust + verification bonus + pitch quality
+  const verificationBonus = this.verificationStatus === 'verified' ? 10 : 0;
+  const pitchBonus = (this.pitchQualityScore || 0) * 1.5;
+  const credibilityIndex = Math.min(100, Math.round(trustScore * 0.7 + verificationBonus + pitchBonus));
+
+  // Persist
+  this.trustScore        = trustScore;
+  this.riskLevel         = riskLevel;
+  this.credibilityIndex  = credibilityIndex;
+  this.scoreComponents   = { profileScore, milestoneScore: Math.round(milestoneScore), fundAccuracy, sentimentScore: Math.round(sentimentScore) };
+
+  // Append to history (keep last 30)
+  this.trustScoreHistory.push({ score: trustScore, profileScore, milestoneScore: Math.round(milestoneScore), fundAccuracy, sentimentScore: Math.round(sentimentScore), reason });
+  if (this.trustScoreHistory.length > 30) {
+    this.trustScoreHistory = this.trustScoreHistory.slice(-30);
+  }
+
+  return { trustScore, riskLevel, credibilityIndex, profileScore, milestoneScore: Math.round(milestoneScore), fundAccuracy, sentimentScore: Math.round(sentimentScore) };
+};
+
+// ── R2: Variance Check ────────────────────────────────────
 startupSchema.methods.checkVariance = function () {
-  if (this.totalRaised === 0) return [];
   const newAlerts = [];
   const alloc = this.fundAllocation;
   const categories = ['tech', 'marketing', 'operations', 'legal'];
   for (const cat of categories) {
     const planned = alloc[cat].planned;
-    const actual = alloc[cat].actual;
+    const actual  = alloc[cat].actual;
     if (planned === 0) continue;
     const deviation = Math.abs(actual - planned) / planned * 100;
     if (deviation > 20) {
-      const existing = this.varianceAlerts.find(
-        a => a.category === cat && !a.resolved
-      );
+      const existing = this.varianceAlerts.find(a => a.category === cat && !a.resolved);
       if (!existing) {
         newAlerts.push({ category: cat, plannedPct: planned, actualPct: actual });
         this.varianceAlerts.push({ category: cat, plannedPct: planned, actualPct: actual });
@@ -165,24 +238,23 @@ startupSchema.methods.checkVariance = function () {
   return newAlerts;
 };
 
-// ── Resolve milestone votes (R3) ──────────────────────────
+// ── R3: Resolve Milestone Votes ───────────────────────────
 startupSchema.methods.resolveMilestoneVotes = function (milestoneId) {
   const m = this.milestones.id(milestoneId);
   if (!m || m.status !== 'submitted') return null;
-  if (new Date() < new Date(m.voteDeadline)) return null; // still open
+  if (new Date() < new Date(m.voteDeadline)) return null;
 
-  const total = m.votes.length;
-  if (total === 0) return null;
+  const total    = m.votes.length;
   const approved = m.votes.filter(v => v.approved).length;
-  const pct = approved / total * 100;
+  const pct      = total > 0 ? (approved / total) * 100 : 0;
 
   if (pct >= 60) {
-    m.status = 'verified';
+    m.status     = 'verified';
     m.voteResult = 'passed';
     m.releasedAt = new Date();
   } else {
-    m.voteResult = 'failed';
-    m.redFlagged = true;
+    m.voteResult  = 'failed';
+    m.redFlagged  = true;
     m.trustPenalty = 5;
     this.trustScore = Math.max(0, this.trustScore - m.trustPenalty);
   }

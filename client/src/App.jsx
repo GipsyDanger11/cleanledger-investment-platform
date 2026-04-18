@@ -15,6 +15,7 @@ import Portfolio          from './pages/Portfolio';
 import Settings           from './pages/Settings';
 import FundDashboard      from './pages/FundDashboard';
 import MilestoneTimeline  from './pages/MilestoneTimeline';
+import CommunicationHub   from './pages/CommunicationHub';
 import NotFound           from './pages/NotFound';
 
 export default function App() {
@@ -44,6 +45,10 @@ export default function App() {
               {/* R3 — Milestone Timeline */}
               <Route path="/milestones"             element={<MilestoneTimeline />} />
               <Route path="/milestones/:id"         element={<MilestoneTimeline />} />
+
+              {/* G3 — Communication Hub */}
+              <Route path="/communicate"            element={<CommunicationHub />} />
+              <Route path="/communicate/:id"        element={<CommunicationHub />} />
             </Route>
 
             {/* Catch-all */}

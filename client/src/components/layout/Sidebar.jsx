@@ -3,13 +3,14 @@ import { useAuth } from '../../context/AuthContext';
 import './Sidebar.css';
 
 const NAV_ITEMS = [
-  { icon: 'dashboard',       label: 'Dashboard',   to: '/dashboard'   },
-  { icon: 'storefront',      label: 'Marketplace', to: '/marketplace' },
-  { icon: 'pie_chart',       label: 'Portfolio',   to: '/portfolio'   },
-  { icon: 'account_balance', label: 'Ledger',      to: '/ledger'      },
-  { icon: 'savings',         label: 'Funds',       to: '/funds'       },
-  { icon: 'flag',            label: 'Milestones',  to: '/milestones'  },
-  { icon: 'settings',        label: 'Settings',    to: '/settings'    },
+  { icon: 'dashboard',       label: 'Dashboard',    to: '/dashboard'    },
+  { icon: 'storefront',      label: 'Marketplace',  to: '/marketplace'  },
+  { icon: 'pie_chart',       label: 'Portfolio',    to: '/portfolio'    },
+  { icon: 'account_balance', label: 'Ledger',       to: '/ledger'       },
+  { icon: 'savings',         label: 'Funds',        to: '/funds'        },
+  { icon: 'flag',            label: 'Milestones',   to: '/milestones'   },
+  { icon: 'forum',           label: 'Communicate',  to: '/communicate'  },
+  { icon: 'settings',        label: 'Settings',     to: '/settings'     },
 ];
 
 export default function Sidebar() {

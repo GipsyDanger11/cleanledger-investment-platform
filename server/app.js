@@ -6,13 +6,15 @@ const rateLimit = require('express-rate-limit');
 const corsOptions = require('./config/cors');
 
 // Route imports
-const authRoutes      = require('./routes/authRoutes');
-const dashboardRoutes = require('./routes/dashboardRoutes');
-const startupRoutes   = require('./routes/startupRoutes');
-const auditRoutes     = require('./routes/auditRoutes');
-const voiceRoutes     = require('./routes/voiceRoutes');
-const profileRoutes   = require('./routes/profileRoutes');
-const errorHandler    = require('./middleware/errorHandler');
+const authRoutes          = require('./routes/authRoutes');
+const dashboardRoutes     = require('./routes/dashboardRoutes');
+const startupRoutes       = require('./routes/startupRoutes');
+const auditRoutes         = require('./routes/auditRoutes');
+const voiceRoutes         = require('./routes/voiceRoutes');
+const profileRoutes       = require('./routes/profileRoutes');
+const trustRoutes         = require('./routes/trustRoutes');
+const communicationRoutes = require('./routes/communicationRoutes');
+const errorHandler        = require('./middleware/errorHandler');
 
 const app = express();
 
@@ -50,6 +52,8 @@ app.use('/api/v1/startups',   startupRoutes);
 app.use('/api/v1/audit',      auditRoutes);
 app.use('/api/v1/voice',      voiceRoutes);
 app.use('/api/v1/profile',    profileRoutes);
+app.use('/api/v1/trust',      trustRoutes);
+app.use('/api/v1',            communicationRoutes);
 
 // ── Health check ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
