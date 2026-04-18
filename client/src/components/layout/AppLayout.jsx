@@ -27,7 +27,7 @@ export default function AppLayout() {
             <div className="profile-toast" onClick={() => navigate('/profile-setup')}>
               <div>
                 <strong>Complete your profile</strong>
-                <p>Click here to finish setup and unlock full features.</p>
+                <p>Finish your investor or founder setup — opens the right form for your role.</p>
               </div>
               <button
                 className="profile-toast__close"

@@ -8,7 +8,14 @@ const userSchema = new mongoose.Schema(
     password:     { type: String, required: true, minlength: 8, select: false },
     role:         { type: String, enum: ['investor', 'startup', 'admin', 'founder'], default: 'investor' },
     organization: { type: String, trim: true },
-    entityType:   { type: String, enum: ['individual', 'company', 'fund', 'spv'], default: 'individual' },
+    entityType:   {
+      type: String,
+      enum: [
+        'individual', 'company', 'fund', 'spv',
+        'family_office', 'vc_fund', 'angel_network', 'corporate',
+      ],
+      default: 'individual',
+    },
 
     // ── Profile completion ──
     profileComplete:        { type: Boolean, default: false },
@@ -32,7 +39,9 @@ const userSchema = new mongoose.Schema(
     teamMembers:  [{ name: String, role: String, linkedIn: String }],
 
     // ── Investor-specific fields ──
-    investmentFocus: { type: String, trim: true },
+    investmentFocus:   { type: String, trim: true },
+    investmentRange:   { type: String, trim: true },
+    accreditationStatus: { type: String, trim: true },
     minTicket:       { type: Number },
     maxTicket:       { type: Number },
     portfolioSize:   { type: Number },
@@ -80,6 +89,7 @@ userSchema.methods.calculateProfileScore = function () {
     if (this.kyc && this.kyc.documents && this.kyc.documents.length > 0) score += 15;
   } else if (this.role === 'investor') {
     if (this.investmentFocus) score += 10;
+    if (this.investmentRange) score += 5;
     if (this.minTicket || this.maxTicket) score += 10;
     if (this.portfolioSize) score += 10;
     if (this.kyc && this.kyc.documents && this.kyc.documents.length > 0) score += 15;

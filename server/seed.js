@@ -8,8 +8,10 @@ const mongoose = require('mongoose');
 const bcrypt   = require('bcryptjs');
 const crypto   = require('crypto');
 
-const User        = require('./models/User');
-const Startup     = require('./models/Startup');
+const User            = require('./models/User');
+const Startup         = require('./models/Startup');
+const InvestorProfile = require('./models/InvestorProfile');
+const FounderProfile  = require('./models/FounderProfile');
 const Investment  = require('./models/Investment');
 const AuditEntry  = require('./models/AuditEntry');
 const Message     = require('./models/Message');
@@ -28,6 +30,8 @@ async function seed() {
   // ── Clear all collections ──────────────────────────────────
   await Promise.all([
     User.deleteMany({}),
+    InvestorProfile.deleteMany({}),
+    FounderProfile.deleteMany({}),
     Startup.deleteMany({}),
     Investment.deleteMany({}),
     AuditEntry.deleteMany({}),
@@ -51,8 +55,6 @@ async function seed() {
     email: 'james.whitfield@capital.com',
     password: 'Investor1234!',
     role: 'investor',
-    organization: 'Whitfield Capital Partners',
-    entityType: 'individual',
     kyc: { status: 'verified', verifiedAt: new Date() },
   });
 
@@ -61,10 +63,32 @@ async function seed() {
     email: 'priya.mehta@aurawind.com',
     password: 'Founder1234!',
     role: 'startup',
-    organization: 'Aura Wind Energy',
-    entityType: 'company',
     kyc: { status: 'verified', verifiedAt: new Date() },
   });
+
+  const invProfile = await InvestorProfile.create({
+    user: investor._id,
+    organization: 'Whitfield Capital Partners',
+    entityType: 'individual',
+    investmentFocus: 'clean_energy',
+    investmentRange: '250k_1m',
+    minTicket: 250_000,
+    maxTicket: 1_000_000,
+    linkedIn: 'https://linkedin.com/in/jameswhitfield',
+    phone: '+44 20 1234 5678',
+    accreditationStatus: 'accredited',
+    portfolioSize: 14,
+    notablePortfolio:
+      'Early-stage climate infrastructure across EU and India; co-led three Series A rounds in grid storage and water tech.',
+    investmentThesis:
+      'Back teams with measurable decarbonization outcomes, clear regulatory path, and capital-efficient scale.',
+    yearsInvesting: 12,
+    operatorBackground: 'Former energy markets lead; advisor to two cleantech listings.',
+    preferredStages: ['seed', 'Series A'],
+    geographyFocus: 'EU, UK, India',
+  });
+  invProfile.recalculateCompletion();
+  await invProfile.save();
 
   console.log('👤 Users created');
 
@@ -180,6 +204,19 @@ async function seed() {
         commentCount: 0,
       },
     ],
+  });
+
+  await FounderProfile.create({
+    user: founder._id,
+    startup: aura._id,
+    founderTitle: 'CEO & Founder',
+    founderLinkedIn: 'https://linkedin.com/in/priyamehta',
+    founderMissionStatement:
+      'Accelerating offshore wind deployment in Northern Europe with transparent capital and rigorous ESG reporting.',
+    leadershipExperienceYears: 14,
+    operatorBackground: 'Renewable project finance and engineering leadership across EU markets.',
+    priorExitsOrAdvisory:
+      'Advisor to NorthSea Renewables; board observer at two growth-stage cleantech companies.',
   });
 
   // ─ 2. Solaris Grid Systems ─

@@ -1,6 +1,32 @@
 const crypto = require('crypto');
 const Startup = require('../models/Startup');
+const FounderProfile = require('../models/FounderProfile');
 const AuditEntry = require('../models/AuditEntry');
+const {
+  sanitizeTeamMembersForStartup,
+  sanitizeMilestonesForStartup,
+} = require('../utils/registrationMappers');
+
+const STARTUP_WRITE_FIELDS = [
+  'name',
+  'category',
+  'sector',
+  'geography',
+  'description',
+  'tags',
+  'website',
+  'teamSize',
+  'registrationNumber',
+  'incorporationProofUrl',
+  'businessPlanUrl',
+  'businessPlanSummary',
+  'pitchDeckUrl',
+  'teamMembers',
+  'fundingTarget',
+  'fundingTimeline',
+  'milestones',
+  'documents',
+];
 
 // ── helpers ──────────────────────────────────────────────
 const catchAsync = fn => (req, res, next) => fn(req, res, next).catch(next);
@@ -14,9 +40,31 @@ exports.createStartup = catchAsync(async (req, res) => {
   if (existing) {
     return apiError(res, 400, 'Startup profile already exists. Use PATCH to update.');
   }
-  const startup = await Startup.create({ ...req.body, createdBy: req.user._id });
+
+  const body = { ...req.body };
+  if (body.teamMembers !== undefined) {
+    body.teamMembers = sanitizeTeamMembersForStartup(body.teamMembers);
+  }
+  if (body.milestones !== undefined) {
+    body.milestones = sanitizeMilestonesForStartup(body.milestones);
+  }
+
+  const payload = { createdBy: req.user._id };
+  for (const key of STARTUP_WRITE_FIELDS) {
+    if (body[key] !== undefined) payload[key] = body[key];
+  }
+  if (!payload.verificationStatus) payload.verificationStatus = 'in_review';
+
+  const startup = await Startup.create(payload);
   startup.calculateProfileScore();
   await startup.save();
+
+  await FounderProfile.findOneAndUpdate(
+    { user: req.user._id },
+    { user: req.user._id, startup: startup._id },
+    { upsert: true, new: true }
+  );
+
   res.status(201).json({ success: true, data: startup });
 });
 
@@ -27,15 +75,26 @@ exports.updateStartup = catchAsync(async (req, res) => {
   });
   if (!startup) return apiError(res, 404, 'Startup not found or unauthorized');
 
-  // Merge top-level fields
+  const body = { ...req.body };
+  if (body.teamMembers !== undefined) {
+    startup.teamMembers = sanitizeTeamMembersForStartup(body.teamMembers);
+    delete body.teamMembers;
+  }
+  if (body.milestones !== undefined) {
+    startup.milestones = sanitizeMilestonesForStartup(body.milestones);
+    delete body.milestones;
+  }
+
   const allowed = [
     'name', 'category', 'sector', 'geography', 'description', 'tags', 'website',
+    'registrationNumber',
+    'teamSize',
     'incorporationProofUrl', 'businessPlanUrl', 'businessPlanSummary',
-    'pitchDeckUrl', 'teamMembers', 'fundingTarget', 'fundingTimeline',
+    'pitchDeckUrl', 'fundingTarget', 'fundingTimeline',
     'fundAllocation', 'verificationStatus', 'documents',
   ];
   for (const key of allowed) {
-    if (req.body[key] !== undefined) startup[key] = req.body[key];
+    if (body[key] !== undefined) startup[key] = body[key];
   }
   startup.calculateProfileScore();
   await startup.save();

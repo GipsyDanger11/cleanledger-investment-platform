@@ -75,6 +75,7 @@ const startupSchema = new mongoose.Schema(
   {
     // ── Basic Info (R1)
     name:        { type: String, required: true, trim: true },
+    registrationNumber: { type: String, trim: true },
     category: {
       type: String,
       enum: ['FinTech', 'HealthTech', 'EdTech', 'AgriTech', 'CleanTech', 'SaaS', 'E-Commerce', 'Other'],
@@ -85,6 +86,7 @@ const startupSchema = new mongoose.Schema(
     description: { type: String, required: true },
     tags:        [String],
     website:     String,
+    teamSize:    { type: Number, min: 0 },
 
     // ── R1 — Verified Profile
     incorporationProofUrl: String,
@@ -108,7 +110,11 @@ const startupSchema = new mongoose.Schema(
     fundingTarget:   { type: Number, required: true },
     totalRaised:     { type: Number, default: 0 },
     backers:         { type: Number, default: 0 },
-    fundingTimeline: { type: String, enum: ['6 months','12 months','18 months','24 months'], default: '12 months' },
+    fundingTimeline: {
+      type: String,
+      enum: ['6 months', '12 months', '18 months', '24 months', '36 months'],
+      default: '12 months',
+    },
     fundAllocation: {
       tech:       { planned: { type: Number, default: 0 }, actual: { type: Number, default: 0 } },
       marketing:  { planned: { type: Number, default: 0 }, actual: { type: Number, default: 0 } },

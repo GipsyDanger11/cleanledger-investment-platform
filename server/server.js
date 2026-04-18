@@ -1,23 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-
-const envCandidates = [
-  path.join(__dirname, '.env'),
-  path.join(process.cwd(), '.env'),
-  path.join(process.cwd(), 'server', '.env'),
-];
-let loadedEnv = false;
-for (const p of envCandidates) {
-  if (fs.existsSync(p)) {
-    require('dotenv').config({ path: p });
-    loadedEnv = true;
-    break;
-  }
-}
-if (!loadedEnv) {
-  require('dotenv').config();
-}
 const { execSync } = require('child_process');
+// Loads merged .env (server/.env wins) — see utils/mistralKey.js
+const { logMistralStartup } = require('./utils/mistralKey');
 const app = require('./app');
 const connectDB = require('./config/db');
 
@@ -67,6 +50,7 @@ const start = async () => {
 
   const server = app.listen(PORT, () => {
     console.log(`CleanLedger API running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
+    logMistralStartup();
   });
 
   // Graceful shutdown

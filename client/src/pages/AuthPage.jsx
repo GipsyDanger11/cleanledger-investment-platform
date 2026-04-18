@@ -248,7 +248,14 @@ export default function AuthPage() {
           email,
           password,
           role,
-          ...(role === 'startup' ? { companyName, sector } : {}),
+          ...(role === 'startup'
+            ? {
+                companyName,
+                sector,
+                category: sector,
+                organization: companyName,
+              }
+            : {}),
         };
         const createdUser = await authRegister(formData);
         navigate(getPostAuthRoute(createdUser), { replace: true });

@@ -24,12 +24,25 @@ for _env_path in (_ai_root / ".env", _ai_root.parent / ".env"):
 app = Flask(__name__)
 CORS(app)
 
+
+def _mistral_key_from_request(data):
+    """Prefer proxy header (Node), then JSON body, then WSGI env (header spelling)."""
+    if not isinstance(data, dict):
+        data = {}
+    hdr = (
+        (request.headers.get("X-Mistral-Api-Key") or "").strip()
+        or (request.environ.get("HTTP_X_MISTRAL_API_KEY") or "").strip()
+    )
+    body = (data.get("mistralApiKey") or "").strip()
+    return (hdr or body).strip()
+
+
 MISTRAL_API_KEY = (os.environ.get("MISTRAL_API_KEY") or "").strip()
 MISTRAL_API_URL = os.environ.get(
     "MISTRAL_API_URL", "https://api.mistral.ai/v1/chat/completions"
 )
-# Default model: override with MISTRAL_CHAT_MODEL (e.g. mistral-small-latest, open-mistral-7b)
-MISTRAL_CHAT_MODEL = os.environ.get("MISTRAL_CHAT_MODEL", "mistral-large-latest")
+# Default: mistral-small-latest works on typical free/dev tiers; override in .env if needed.
+MISTRAL_CHAT_MODEL = os.environ.get("MISTRAL_CHAT_MODEL", "mistral-small-latest")
 
 # ── System prompt for voice login ────────────────────────
 VOICE_SYSTEM_PROMPT = """You are JARVIS, an AI assistant for CleanLedger — a secure investment platform. You help users log in and sign up using voice commands.
@@ -155,8 +168,9 @@ def chat():
     Body: { "messages": [{ "role": "user"|"assistant", "content": "..." }] }
     """
     try:
-        data = request.get_json(force=True)
-        req_key = (data.pop("mistralApiKey", None) or "").strip()
+        data = request.get_json(force=True, silent=True) or {}
+        req_key = _mistral_key_from_request(data)
+        data.pop("mistralApiKey", None)
         effective_key = req_key or MISTRAL_API_KEY
         if not effective_key:
             return jsonify({
@@ -198,8 +212,9 @@ def summarize_pitch():
     Body: { "text": "full business plan text..." }
     """
     try:
-        data = request.get_json(force=True)
-        req_key = (data.get("mistralApiKey") or "").strip()
+        data = request.get_json(force=True, silent=True) or {}
+        req_key = _mistral_key_from_request(data)
+        data.pop("mistralApiKey", None)
         effective_key = req_key or MISTRAL_API_KEY
         if not effective_key:
             return jsonify({
@@ -211,10 +226,10 @@ def summarize_pitch():
 
         if not pitch_text:
             return jsonify({"success": False, "message": "No pitch text provided"}), 400
-        if len(pitch_text) < 50:
+        if len(pitch_text) < 15:
             return jsonify({
                 "success": False,
-                "message": "Pitch text too short. Please provide more detail.",
+                "message": "Pitch text too short. Add at least one full sentence (15+ characters).",
             }), 400
         if len(pitch_text) > 10000:
             pitch_text = pitch_text[:10000]
@@ -271,7 +286,10 @@ if __name__ == "__main__":
     port = int(os.environ.get("AI_SERVICE_PORT", "5001"))
     print(f"[JARVIS] AI Service on port {port} | model={MISTRAL_CHAT_MODEL}")
     if not MISTRAL_API_KEY:
-        print("[WARNING] MISTRAL_API_KEY not set! Voice AI will not work.")
+        print(
+            "[OK] MISTRAL_API_KEY not in env — Node will send it per request "
+            "(X-Mistral-Api-Key). Or set MISTRAL_API_KEY in server/.env."
+        )
     else:
-        print(f"[OK] MISTRAL_API_KEY loaded ({MISTRAL_API_KEY[:8]}...)")
+        print(f"[OK] Mistral configured from env ({MISTRAL_API_KEY[:8]}…)")
     app.run(host="0.0.0.0", port=port, debug=False)

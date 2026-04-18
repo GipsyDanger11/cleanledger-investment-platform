@@ -1,6 +1,11 @@
 const errorHandler = (err, req, res, next) => {
   console.error(`[ERROR] ${req.method} ${req.originalUrl} →`, err.message);
 
+  if (err.name === 'MulterError') {
+    const msg =
+      err.code === 'LIMIT_FILE_SIZE' ? 'Uploaded file is too large (max 20MB).' : err.message;
+    return res.status(400).json({ success: false, message: msg });
+  }
   if (err.name === 'ValidationError') {
     const messages = Object.values(err.errors).map((e) => e.message);
     return res.status(400).json({ success: false, message: messages.join('. ') });

@@ -26,9 +26,16 @@ export default function InvestorRegistration() {
     setLoading(true);
     try {
       await register({
-        name: form.name, email: form.email, password: form.password,
-        role: 'investor', organization: form.organization,
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        role: 'investor',
+        organization: form.organization || undefined,
         entityType: form.entityType,
+        investmentFocus: form.investmentFocus || undefined,
+        investmentRange: form.investmentRange || undefined,
+        linkedIn: form.linkedIn || undefined,
+        accreditationStatus: form.accreditedStatus || undefined,
       });
       navigate('/profile-setup');
     } catch (err) {

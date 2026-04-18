@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import apiClient from '../utils/apiClient';
+import { mapWizardCategoryToStartupEnum, mapFundingTimeline } from '../utils/startupWizardMaps';
 import './StartupRegistration.css';
 
 const STEPS = [
@@ -20,6 +22,7 @@ function calcScore(form) {
   let s = 0;
   if (form.name)               s += 20;
   if (form.category)           s += 15;
+  if (form.geography)         s += 10;
   if (form.incorporationProof) s += 20;
   if (form.teamMembers.filter(t => t.name).length) s += 15;
   if (form.pitchText || form.pitchDeck) s += 10;
@@ -48,7 +51,7 @@ export default function StartupRegistration() {
     // Account
     name: '', email: '', password: '', confirmPassword: '',
     // Business
-    companyName: '', category: '', incorporationProof: null,
+    companyName: '', category: '', geography: '', incorporationProof: null,
     registrationNumber: '', website: '',
     // Team
     teamMembers: [
@@ -87,29 +90,83 @@ export default function StartupRegistration() {
     if (form.password.length < 8) { setError('Password must be at least 8 characters.'); return; }
     setLoading(true);
     try {
-      const token = localStorage.getItem('cl_token') || localStorage.getItem('token');
-      const payload = new FormData();
-      Object.entries(form).forEach(([key, val]) => {
-        if (val !== null && val !== undefined && val !== '') {
-          if (val instanceof File) payload.append(key, val);
-          else if (Array.isArray(val)) payload.append(key, JSON.stringify(val));
-          else payload.append(key, val);
-        }
+      const teamPayload = form.teamMembers.filter((t) => t.name?.trim());
+      const milestonesPayload = form.milestones.filter((m) => m.title?.trim());
+
+      await register({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        role: 'startup',
       });
 
-      // Backend register the user first, then submit startup
-      await register({ name: form.name, email: form.email, password: form.password, role: 'startup', organization: form.companyName });
+      const hasFiles = form.incorporationProof || form.pitchDeck || form.businessPlan;
+      let urls = {};
+      if (hasFiles) {
+        const fd = new FormData();
+        if (form.incorporationProof instanceof File) {
+          fd.append('incorporationProof', form.incorporationProof);
+        }
+        if (form.pitchDeck instanceof File) fd.append('pitchDeck', form.pitchDeck);
+        if (form.businessPlan instanceof File) fd.append('businessPlan', form.businessPlan);
+        const { data } = await apiClient.post('/uploads/registration', fd);
+        urls = data.urls || {};
+      }
+
+      const rawDesc = (form.pitchText || '').trim();
+      const description =
+        rawDesc.length >= 40
+          ? rawDesc
+          : `Company: ${form.companyName.trim()}. Sector: ${form.category}. ${
+              rawDesc || 'See attached deck and documents for full business narrative and traction.'
+            }`.trim();
+
+      const startupBody = {
+        name: form.companyName.trim(),
+        category: mapWizardCategoryToStartupEnum(form.category),
+        sector: form.category,
+        geography: (form.geography || '').trim() || 'Not specified',
+        description,
+        teamMembers: teamPayload,
+        milestones: milestonesPayload.map((m) => ({
+          title: m.title.trim(),
+          targetDate: m.targetDate || undefined,
+          tranchePct:
+            m.tranchePct !== '' && m.tranchePct != null ? Number(m.tranchePct) : 0,
+        })),
+        fundingTarget: Number(form.fundingGoal),
+        fundingTimeline: mapFundingTimeline(form.timeline),
+      };
+      if (form.category) startupBody.tags = [form.category];
+      if ((form.website || '').trim()) startupBody.website = form.website.trim();
+      if ((form.registrationNumber || '').trim()) {
+        startupBody.registrationNumber = form.registrationNumber.trim();
+      }
+      if (urls.incorporationProofUrl) startupBody.incorporationProofUrl = urls.incorporationProofUrl;
+      if (urls.pitchDeckUrl) startupBody.pitchDeckUrl = urls.pitchDeckUrl;
+      if (urls.businessPlanUrl) startupBody.businessPlanUrl = urls.businessPlanUrl;
+      if (rawDesc) startupBody.businessPlanSummary = rawDesc.slice(0, 2000);
+
+      await apiClient.post('/startups', startupBody);
+
       setVerificationStatus('pending');
       navigate('/profile-setup');
     } catch (err) {
-      setError(err.message || 'Registration failed.');
+      const msg = err.response?.data?.message || err.message || 'Registration failed.';
+      setError(Array.isArray(msg) ? msg.join(' ') : msg);
     } finally {
       setLoading(false);
     }
   };
 
   const statusMeta = STATUS_META[verificationStatus];
-  const canNext1 = form.name && form.email && form.password && form.companyName && form.category;
+  const canNext1 =
+    form.name &&
+    form.email &&
+    form.password &&
+    form.companyName &&
+    form.category &&
+    form.geography?.trim();
   const canNext3 = form.pitchText || form.pitchDeck;
 
   return (
@@ -205,6 +262,12 @@ export default function StartupRegistration() {
                     {SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
+              </div>
+              <div className="sr-field">
+                <label>Primary geography / market *</label>
+                <input className="sr-input" placeholder="e.g. India · Maharashtra, EU, Global"
+                  value={form.geography} onChange={e => update('geography', e.target.value)} />
+                <p className="sr-hint">Where you operate or seek funding — stored on your startup profile.</p>
               </div>
               <div className="sr-row">
                 <div className="sr-field">
