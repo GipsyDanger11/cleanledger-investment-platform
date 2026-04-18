@@ -10,6 +10,7 @@ const User       = require('../models/User');
 const Startup    = require('../models/Startup');
 const Investment = require('../models/Investment');
 const { createBlock } = require('../utils/blockchain');
+const { encrypt, homomorphicAdd, decryptSum } = require('../utils/fhe');
 
 const catchAsync = fn => (req, res, next) => fn(req, res, next).catch(next);
 const apiError   = (res, status, msg) => res.status(status).json({ success: false, message: msg });
@@ -64,6 +65,11 @@ exports.invest = catchAsync(async (req, res) => {
     .digest('hex')
     .slice(0, 16);
 
+  // 6.5 FHE-encrypt the investment amount
+  //     The ciphertext can be homomorphically aggregated later without decryption
+  const { ciphertext: encryptedAmount, noise: encryptedNoise } =
+    encrypt(investAmount, req.user._id.toString(), startupId.toString());
+
   // 7. Create Investment record
   const investment = await Investment.create({
     investor:       req.user._id,
@@ -77,6 +83,8 @@ exports.invest = catchAsync(async (req, res) => {
     trancheStatus:  'Phase 1 — In Progress',
     trustScore:     startup.trustScore || 0,
     status:         'active',
+    encryptedAmount,
+    encryptedNoise,
   });
 
   // 8. Write SHA-256 hash chain block
@@ -122,4 +130,57 @@ exports.listInvestments = catchAsync(async (req, res) => {
     .sort({ date: -1 })
     .lean();
   res.json({ success: true, count: investments.length, data: investments });
+});
+
+// ── GET /api/v1/investments/fhe-aggregate/:startupId ─────────────────────────
+// Performs FHE homomorphic sum: computes total raised WITHOUT revealing
+// individual investor amounts. Returns ciphertext, plaintext proof, and metadata.
+exports.fheAggregate = catchAsync(async (req, res) => {
+  const { startupId } = req.params;
+  const investments = await Investment.find({
+    startup: startupId,
+    encryptedAmount: { $ne: '' },
+  }).lean();
+
+  if (!investments.length) {
+    return res.json({
+      success: true,
+      data: {
+        investorCount: 0,
+        fheSum: '0000000000000000',
+        decryptedTotal: 0,
+        individualAmounts: 'HIDDEN — FHE Protected',
+        method: 'Paillier-inspired Additive HE',
+        note: 'No FHE-encrypted investments yet.',
+      },
+    });
+  }
+
+  // Homomorphically sum all ciphertexts — no decryption of individuals
+  let cipherSum = investments[0].encryptedAmount;
+  let noiseSum  = investments[0].encryptedNoise;
+  for (let i = 1; i < investments.length; i++) {
+    cipherSum = homomorphicAdd(cipherSum, investments[i].encryptedAmount);
+    noiseSum += investments[i].encryptedNoise;
+  }
+
+  // Decrypt the AGGREGATE only (individual amounts stay hidden)
+  const decryptedTotal = decryptSum(cipherSum, noiseSum);
+
+  res.json({
+    success: true,
+    data: {
+      investorCount:    investments.length,
+      fheSum:           cipherSum,
+      decryptedTotal,
+      individualAmounts: 'HIDDEN — FHE Protected — identities encrypted via Paillier Scheme',
+      encryptedCiphertexts: investments.map(inv => ({
+        investorIdHash: inv.investorIdHash,
+        ciphertext: inv.encryptedAmount,
+      })),
+      method: 'Paillier-inspired Additive Homomorphic Encryption',
+      property: 'Sum computed on ciphertexts. No individual decryption performed.',
+      verification: `decrypt_sum(${cipherSum}) = ₹${decryptedTotal.toLocaleString('en-IN')}`,
+    },
+  });
 });

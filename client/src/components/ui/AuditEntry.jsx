@@ -46,9 +46,27 @@ export default function AuditEntry({ entry, isOdd }) {
         <div style={{ fontSize: '0.6rem', color: 'var(--color-outline)' }}>→ {entry.toEntity}</div>
       </td>
 
-      {/* Amount in ₹ */}
+      {/* Amount in ₹ — FHE-masked for investment rows */}
       <td className="num text-body-sm" style={{ fontWeight: 600 }}>
-        {entry.amount > 0 ? formatINR(entry.amount) : <span style={{ color: 'var(--color-outline)' }}>—</span>}
+        {entry.type === 'investment' ? (
+          <span title="FHE-encrypted: amount hidden from public audit. Homomorphic sum available." style={{
+            display: 'inline-flex', alignItems: 'center', gap: '4px',
+            fontFamily: 'Courier New, monospace',
+            fontSize: '0.6rem',
+            color: '#7c3aed',
+            background: 'rgba(124,58,237,0.1)',
+            border: '1px solid rgba(124,58,237,0.25)',
+            borderRadius: '6px',
+            padding: '2px 6px',
+            cursor: 'help',
+            letterSpacing: '0.03em',
+          }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '10px', fontVariationSettings: "'FILL' 1" }}>lock</span>
+            FHE
+          </span>
+        ) : (
+          entry.amount > 0 ? formatINR(entry.amount) : <span style={{ color: 'var(--color-outline)' }}>—</span>
+        )}
       </td>
 
       {/* Hash (own) */}

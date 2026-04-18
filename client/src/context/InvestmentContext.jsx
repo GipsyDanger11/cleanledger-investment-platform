@@ -125,6 +125,12 @@ export function InvestmentProvider({ children }) {
     return data;
   }, [tok]);
 
+  // ── Action: FHE homomorphic aggregate ──────────────────────
+  const fheAggregate = useCallback(async (startupId) => {
+    const data = await api('GET', `/investments/fhe-aggregate/${startupId}`, null, tok());
+    return data.data;
+  }, [tok]);
+
   // ── Fetch: audit trail ─────────────────────────────────────
   const fetchAuditEntries = useCallback(async (params = {}) => {
     try {
@@ -342,6 +348,7 @@ export function InvestmentProvider({ children }) {
     invest,
     verifyChainIntegrity,
     simulateTamper,
+    fheAggregate,
     askQuestion,
     answerQuestion,
     postAnnouncement,

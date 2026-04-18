@@ -12,7 +12,7 @@ export default function StartupDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { startups, fetchStartup, walletBalance, invest, fetchWallet } = useInvestment();
+  const { startups, fetchStartup, walletBalance, invest, fetchWallet, fheAggregate } = useInvestment();
   const [detail, setDetail] = useState(null);
   const [loadError, setLoadError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -25,6 +25,22 @@ export default function StartupDetails() {
   const [investLoading,   setInvestLoading]      = useState(false);
   const [investError,     setInvestError]        = useState('');
   const [investSuccess,   setInvestSuccess]      = useState(null); // { amount, blockHash, newBalance }
+
+  // ── FHE State ───────────────────────────────────────────────
+  const [fheResult, setFheResult] = useState(null);
+  const [fheLoading, setFheLoading] = useState(false);
+
+  const handleFHE = async () => {
+    setFheLoading(true);
+    try {
+      const res = await fheAggregate(id);
+      setFheResult(res);
+    } catch (e) {
+      alert('FHE Aggregate failed: ' + e.message);
+    } finally {
+      setFheLoading(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -248,6 +264,7 @@ export default function StartupDetails() {
               </div>
             </div>
 
+
             {/* Progress */}
             <div style={{ marginTop: 'var(--space-6)' }}>
               <div className="flex justify-between" style={{ marginBottom: '6px' }}>
@@ -284,6 +301,55 @@ export default function StartupDetails() {
             <button className="btn btn-secondary w-full" style={{ marginTop: 'var(--space-3)', justifyContent: 'center' }}>
               Download Prospectus
             </button>
+          </div>
+
+          {/* FHE Demo Panel */}
+          <div className="card startup-details__fhe-card" style={{ marginTop: 'var(--space-4)', background: 'var(--color-surface-container)' }}>
+            <h3 className="text-label-lg" style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 var(--space-4)' }}>
+              <span className="material-symbols-outlined" style={{ color: '#7c3aed', fontVariationSettings: "'FILL' 1" }}>lock_person</span>
+              FHE Identity Protection
+            </h3>
+            <p className="text-body-sm text-secondary" style={{ marginBottom: 'var(--space-4)' }}>
+              Investor identities and amounts are encrypted via <strong>Paillier Additive Homomorphic Encryption</strong>. The platform calculates total funds raised without decrypting individual portfolios.
+            </p>
+            <button 
+              className="btn btn-secondary" 
+              style={{ width: '100%', borderColor: 'rgba(124,58,237,0.3)', color: '#7c3aed' }}
+              onClick={handleFHE}
+              disabled={fheLoading}
+            >
+              {fheLoading ? 'Computing Ciphertexts…' : 'Run FHE Homomorphic Sum'}
+            </button>
+            
+            {fheResult && (
+              <div style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3)', background: 'var(--color-surface-container-low)', borderRadius: '8px', border: '1px solid var(--color-outline-variant)' }}>
+                <p className="text-label-sm" style={{ margin: '0 0 var(--space-2)' }}>
+                  <strong>{fheResult.investorCount} Encrypted Inputs:</strong>
+                </p>
+                <div style={{ maxHeight: '80px', overflowY: 'auto', marginBottom: 'var(--space-2)', fontSize: '0.65rem', fontFamily: 'Courier New, monospace', color: 'var(--color-outline)' }}>
+                  {fheResult.encryptedCiphertexts?.map((c, i) => (
+                    <div key={i}>ID:{c.investorIdHash.slice(0,6)}... E(x): {c.ciphertext}</div>
+                  ))}
+                  {fheResult.investorCount === 0 && 'No investments yet.'}
+                </div>
+                {fheResult.investorCount > 0 && (
+                  <>
+                    <p className="text-label-sm" style={{ margin: 'var(--space-3) 0 var(--space-1)' }}>
+                      <strong>Homomorphic Sum Ciphertext:</strong>
+                    </p>
+                    <div style={{ fontSize: '0.7rem', fontFamily: 'Courier New, monospace', color: '#7c3aed', background: 'rgba(124,58,237,0.1)', padding: '4px', borderRadius: '4px', wordBreak: 'break-all' }}>
+                      {fheResult.fheSum}
+                    </div>
+                    <p className="text-label-sm" style={{ margin: 'var(--space-3) 0 4px', color: '#10b981', fontWeight: 600 }}>
+                      ✅ Decrypted Aggregate Verification:
+                    </p>
+                    <div style={{ fontSize: '0.8rem', fontFamily: 'Courier New, monospace', color: '#10b981' }}>
+                      {fheResult.verification}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Tags */}

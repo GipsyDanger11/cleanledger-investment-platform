@@ -19,6 +19,10 @@ const investmentSchema = new mongoose.Schema(
     trustScore:    { type: Number, default: 0 },
     status:        { type: String, enum: ['active', 'exited', 'pending'], default: 'active' },
     date:          { type: Date, default: Date.now },
+
+    // ── FHE encrypted identity ───────────────────────────────────
+    encryptedAmount: { type: String, default: '' }, // FHE ciphertext of investment amount
+    encryptedNoise:  { type: Number, default: 0  }, // KMS noise component (secret key material)
   },
   { timestamps: true }
 );
