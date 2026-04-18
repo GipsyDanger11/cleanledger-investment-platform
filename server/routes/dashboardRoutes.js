@@ -1,12 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const { getSummary, getActiveInvestments, getNotifications } = require('../controllers/dashboardController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, restrictTo } = require('../middleware/authMiddleware');
+const { getAdminDashboard, getFounderDashboard, getInvestorDashboard } = require('../controllers/roleDashboardController');
 
+// Apply authentication to all routes
 router.use(protect);
 
-router.get('/summary',             getSummary);
-router.get('/active-investments',  getActiveInvestments);
-router.get('/notifications',       getNotifications);
+// Admin dashboard – only admin role
+router.get('/admin', restrictTo('admin'), getAdminDashboard);
+
+// Founder dashboard – only founder role
+router.get('/founder', restrictTo('founder'), getFounderDashboard);
+
+// Investor dashboard – only investor role
+router.get('/investor', restrictTo('investor'), getInvestorDashboard);
 
 module.exports = router;
