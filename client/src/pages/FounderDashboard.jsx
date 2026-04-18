@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import apiClient from '../utils/apiClient';
 import './founder.css';
 
@@ -18,24 +18,24 @@ const FounderDashboard = () => {
     fetchFounderDashboard();
   }, []);
 
-  if (error) return <div className="founder-dash founder-dash--error">{error}</div>;
-  if (!dashboard) return <div className="founder-dash founder-dash--loading">Loading founder dashboard...</div>;
-
-  const startup = dashboard.startup;
+  const startup = dashboard?.startup || {};
   const milestones = startup?.milestones || [];
   const completedMilestones = milestones.filter((m) => ['verified', 'released'].includes(m.status)).length;
   const revenueEstimate = Math.round((startup.totalRaised || 0) * 0.08);
-  const userGrowth = startup.backers ? Math.round((dashboard.investorCount / startup.backers) * 100) : 0;
-  const recentActivity = (dashboard.notifications || []).slice(0, 5);
+  const userGrowth = startup.backers ? Math.round(((dashboard?.investorCount || 0) / startup.backers) * 100) : 0;
+  const recentActivity = (dashboard?.notifications || []).slice(0, 5);
 
-  const founderStats = useMemo(() => ([
+  const founderStats = [
     { label: 'Revenue (Est. MRR)', value: `$${revenueEstimate.toLocaleString()}` },
     { label: 'User Growth', value: `${Math.min(userGrowth, 100)}%` },
     { label: 'Total Raised', value: `$${(startup.totalRaised || 0).toLocaleString()}` },
-    { label: 'Active Investors', value: dashboard.investorCount || 0 },
+    { label: 'Active Investors', value: dashboard?.investorCount || 0 },
     { label: 'Trust Score', value: startup.trustScore || 0 },
     { label: 'Milestones Done', value: `${completedMilestones}/${milestones.length || 0}` },
-  ]), [revenueEstimate, userGrowth, startup.totalRaised, startup.trustScore, dashboard.investorCount, completedMilestones, milestones.length]);
+  ];
+
+  if (error) return <div className="founder-dash founder-dash--error">{error}</div>;
+  if (!dashboard) return <div className="founder-dash founder-dash--loading">Loading founder dashboard...</div>;
 
   return (
     <div className="founder-dash">

@@ -45,7 +45,7 @@ export default function App() {
   return (
     <AuthProvider>
       <InvestmentProvider>
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             {/* ── Public ── */}
             <Route path="/"              element={<LandingPage />} />

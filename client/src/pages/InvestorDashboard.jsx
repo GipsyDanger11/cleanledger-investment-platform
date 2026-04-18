@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import apiClient from '../utils/apiClient';
 import './investor.css';
 
@@ -18,22 +18,22 @@ const InvestorDashboard = () => {
     fetchInvestorDashboard();
   }, []);
 
-  if (error) return <div className="investor-dash investor-dash--error">{error}</div>;
-  if (!dashboard) return <div className="investor-dash investor-dash--loading">Loading investor dashboard...</div>;
-
-  const investments = dashboard.investments || [];
-  const totalInvested = dashboard.portfolioValue || 0;
+  const investments = dashboard?.investments || [];
+  const totalInvested = dashboard?.portfolioValue || 0;
   const projectedReturn = Math.round(totalInvested * 1.18);
   const roi = totalInvested > 0 ? Math.round(((projectedReturn - totalInvested) / totalInvested) * 100) : 0;
 
-  const stats = useMemo(() => ([
+  const stats = [
     { label: 'Portfolio Value', value: `$${totalInvested.toLocaleString()}` },
     { label: 'Projected Return', value: `$${projectedReturn.toLocaleString()}` },
     { label: 'ROI', value: `${roi}%` },
-    { label: 'Avg Trust Score', value: dashboard.avgTrustScore || 0 },
+    { label: 'Avg Trust Score', value: dashboard?.avgTrustScore || 0 },
     { label: 'Active Investments', value: investments.length },
-    { label: 'Pending Votes', value: (dashboard.pendingVotes || []).length },
-  ]), [totalInvested, projectedReturn, roi, dashboard.avgTrustScore, investments.length, dashboard.pendingVotes]);
+    { label: 'Pending Votes', value: (dashboard?.pendingVotes || []).length },
+  ];
+
+  if (error) return <div className="investor-dash investor-dash--error">{error}</div>;
+  if (!dashboard) return <div className="investor-dash investor-dash--loading">Loading investor dashboard...</div>;
 
   return (
     <div className="investor-dash">
