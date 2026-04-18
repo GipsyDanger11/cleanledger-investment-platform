@@ -7,8 +7,9 @@ import AppLayout from './components/layout/AppLayout';
 import LandingPage          from './pages/LandingPage';
 import AuthPage             from './pages/AuthPage';
 import ProfileCompletion    from './pages/ProfileCompletion';
-import Dashboard            from './pages/Dashboard';
 import AdminDashboard       from './pages/AdminDashboard';
+import FounderDashboard     from './pages/FounderDashboard';
+import InvestorDashboard    from './pages/InvestorDashboard';
 import Marketplace          from './pages/Marketplace';
 import StartupDetails       from './pages/StartupDetails';
 import AuditTrail           from './pages/AuditTrail';
@@ -68,6 +69,16 @@ export default function App() {
 
               {/* Smart redirect: /dashboard → role-specific dashboard */}
               <Route path="/dashboard" element={<DashboardRouter />} />
+              <Route path="/founder-dashboard" element={
+                <RequireRole allowedRoles={['startup']}>
+                  <FounderDashboard />
+                </RequireRole>
+              } />
+              <Route path="/investor-dashboard" element={
+                <RequireRole allowedRoles={['investor']}>
+                  <InvestorDashboard />
+                </RequireRole>
+              } />
 
               {/* Investor-specific */}
               <Route path="/portfolio" element={
@@ -109,6 +120,6 @@ export default function App() {
 function DashboardRouter() {
   const { user } = useAuth();
   if (user?.role === 'admin')   return <Navigate to="/admin" replace />;
-  // Both 'startup' and 'investor' use the same Dashboard component (role-aware internally)
-  return <Dashboard />;
+  if (user?.role === 'startup') return <Navigate to="/founder-dashboard" replace />;
+  return <Navigate to="/investor-dashboard" replace />;
 }

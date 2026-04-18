@@ -1,37 +1,87 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import apiClient from '../utils/apiClient';
 import './founder.css';
 
 const FounderDashboard = () => {
-  const [startup, setStartup] = useState(null);
+  const [dashboard, setDashboard] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchStartup = async () => {
+    const fetchFounderDashboard = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await fetch('/api/v1/dashboard/founder', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error('Failed to load startup data');
-        const data = await res.json();
-        setStartup(data.data);
+        const { data } = await apiClient.get('/dashboard/founder');
+        setDashboard(data.data);
       } catch (err) {
-        setError(err.message);
+        setError(err.response?.data?.message || err.message || 'Failed to load founder dashboard');
       }
     };
-    fetchStartup();
+    fetchFounderDashboard();
   }, []);
 
-  if (error) return <div className="founder-dashboard error">{error}</div>;
-  if (!startup) return <div className="founder-dashboard loading">Loading...</div>;
+  if (error) return <div className="founder-dash founder-dash--error">{error}</div>;
+  if (!dashboard) return <div className="founder-dash founder-dash--loading">Loading founder dashboard...</div>;
+
+  const startup = dashboard.startup;
+  const milestones = startup?.milestones || [];
+  const completedMilestones = milestones.filter((m) => ['verified', 'released'].includes(m.status)).length;
+  const revenueEstimate = Math.round((startup.totalRaised || 0) * 0.08);
+  const userGrowth = startup.backers ? Math.round((dashboard.investorCount / startup.backers) * 100) : 0;
+  const recentActivity = (dashboard.notifications || []).slice(0, 5);
+
+  const founderStats = useMemo(() => ([
+    { label: 'Revenue (Est. MRR)', value: `$${revenueEstimate.toLocaleString()}` },
+    { label: 'User Growth', value: `${Math.min(userGrowth, 100)}%` },
+    { label: 'Total Raised', value: `$${(startup.totalRaised || 0).toLocaleString()}` },
+    { label: 'Active Investors', value: dashboard.investorCount || 0 },
+    { label: 'Trust Score', value: startup.trustScore || 0 },
+    { label: 'Milestones Done', value: `${completedMilestones}/${milestones.length || 0}` },
+  ]), [revenueEstimate, userGrowth, startup.totalRaised, startup.trustScore, dashboard.investorCount, completedMilestones, milestones.length]);
 
   return (
-    <div className="founder-dashboard container">
-      <h1 className="founder-dashboard title">Your Startup</h1>
-      <h2>{startup.name}</h2>
-      <p>{startup.description}</p>
-      <p><strong>Trust Score:</strong> {startup.trustScore}</p>
-      {/* Add more detailed sections as needed */}
+    <div className="founder-dash">
+      <div className="founder-dash__header">
+        <div>
+          <h1 className="founder-dash__title">Founder Dashboard</h1>
+          <p className="founder-dash__sub">{startup.name} · {startup.sector}</p>
+        </div>
+        <span className="founder-dash__badge">Startup View</span>
+      </div>
+
+      <div className="founder-dash__stats">
+        {founderStats.map((item) => (
+          <div className="founder-stat-card" key={item.label}>
+            <div className="founder-stat-card__value">{item.value}</div>
+            <div className="founder-stat-card__label">{item.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="founder-dash__grid">
+        <section className="founder-panel">
+          <h2>Startup Activity</h2>
+          <ul className="founder-activity">
+            {recentActivity.length === 0 && <li>No recent activity.</li>}
+            {recentActivity.map((n) => (
+              <li key={n._id}>
+                <strong>{n.title}</strong>
+                <p>{n.body}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="founder-panel">
+          <h2>Milestone Pipeline</h2>
+          <ul className="founder-milestones">
+            {milestones.map((m) => (
+              <li key={m._id}>
+                <span>{m.title}</span>
+                <span className={`status status--${m.status}`}>{m.status.replace('_', ' ')}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
     </div>
   );
 };

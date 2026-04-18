@@ -216,7 +216,7 @@ export default function AuthPage() {
   const getPostAuthRoute = (u) => {
     if (!u) return '/dashboard';
     if (u.role === 'admin') return '/admin';
-    return u.profileComplete ? '/dashboard' : '/profile-setup';
+    return '/dashboard';
   };
 
   useEffect(() => {

@@ -12,6 +12,7 @@ export default function AppLayout() {
   const [notifications, setNotifications] = useState([]);
   const [unread, setUnread] = useState(0);
   const [showDrop, setShowDrop] = useState(false);
+  const [showProfileToast, setShowProfileToast] = useState(false);
   const dropRef = useRef(null);
 
   if (!isAuthenticated) return <Navigate to="/auth" replace />;
@@ -30,6 +31,12 @@ export default function AppLayout() {
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    if (user.role === 'admin') return;
+    setShowProfileToast(!user.profileComplete);
+  }, [user?.role, user?.profileComplete]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -118,6 +125,24 @@ export default function AppLayout() {
         </div>
 
         <div className="app-layout__content">
+          {showProfileToast && (
+            <div className="profile-toast" onClick={() => navigate('/profile-setup')}>
+              <div>
+                <strong>Complete your profile</strong>
+                <p>Click here to finish setup and unlock full features.</p>
+              </div>
+              <button
+                className="profile-toast__close"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowProfileToast(false);
+                }}
+                aria-label="Dismiss profile reminder"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+              </button>
+            </div>
+          )}
           <Outlet />
         </div>
       </main>

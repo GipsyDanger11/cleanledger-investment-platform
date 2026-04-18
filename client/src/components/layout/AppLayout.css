@@ -24,6 +24,32 @@
   color: #111111;
 }
 
+.profile-toast {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #90CAF9;
+  background: #E3F2FD;
+  color: #111111;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+.profile-toast p {
+  margin: 2px 0 0;
+  font-size: 12px;
+}
+.profile-toast__close {
+  border: none;
+  background: transparent;
+  color: #1565C0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
 /* ── App Top Bar ─────────────────────────────────────── */
 .app-topbar {
   display: flex; align-items: center; justify-content: space-between;

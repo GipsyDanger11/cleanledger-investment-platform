@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import apiClient from '../utils/apiClient';
 
 const AuthContext = createContext(null);
@@ -124,6 +124,26 @@ export function AuthProvider({ children }) {
   }, []);
 
   const clearError = useCallback(() => setError(null), []);
+
+  // Keep profile completion status synced with DB across sessions.
+  useEffect(() => {
+    if (!token) return;
+    const syncUser = async () => {
+      try {
+        const { data } = await apiClient.get('/auth/me');
+        if (data?.user) {
+          setUser((prev) => {
+            const refreshed = { ...(prev || {}), ...data.user };
+            localStorage.setItem('cl_user', JSON.stringify(refreshed));
+            return refreshed;
+          });
+        }
+      } catch {
+        // ignore; interceptor handles auth failures
+      }
+    };
+    syncUser();
+  }, [token]);
 
   return (
     <AuthContext.Provider

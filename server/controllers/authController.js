@@ -99,7 +99,34 @@ const login = async (req, res, next) => {
 };
 
 const getMe = async (req, res) => {
-  res.json({ success: true, user: req.user });
+  let effectiveProfileComplete = req.user.profileComplete;
+  let effectiveProfileCompletionScore = req.user.profileCompletionScore;
+
+  if (req.user.role === 'startup') {
+    const startupProfile = await Startup.findOne({ createdBy: req.user._id })
+      .select('profileCompletionScore')
+      .lean();
+    if (startupProfile) {
+      const startupScore = startupProfile.profileCompletionScore || 0;
+      effectiveProfileCompletionScore = Math.max(effectiveProfileCompletionScore || 0, startupScore);
+      effectiveProfileComplete = startupScore >= 70;
+    }
+  }
+
+  res.json({
+    success: true,
+    user: {
+      id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      role: req.user.role,
+      organization: req.user.organization,
+      entityType: req.user.entityType,
+      kyc: req.user.kyc,
+      profileComplete: effectiveProfileComplete,
+      profileCompletionScore: effectiveProfileCompletionScore,
+    },
+  });
 };
 
 const logout = (req, res) => {
