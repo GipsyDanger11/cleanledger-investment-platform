@@ -6,30 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "dev:no-db": "NODE_ENV=development MONGO_URI='' node server.js"
+    "seed": "node seed.js"
   },
-  "keywords": [
-    "cleanledger",
-    "express",
-    "mongodb",
-    "fintech"
-  ],
+  "keywords": ["cleanledger", "express", "mongodb", "fintech"],
   "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "nodemon": "^3.1.14"
-  },
-  "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "express-rate-limit": "^8.3.2",
-    "helmet": "^8.1.0",
-    "joi": "^18.1.2",
-    "jsonwebtoken": "^9.0.3",
-    "mongoose": "^8.23.0",
-    "morgan": "^1.10.1",
-    "multer": "^2.1.1"
-  }
+  "license": "ISC"
 }

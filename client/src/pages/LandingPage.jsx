@@ -77,10 +77,10 @@ export default function LandingPage() {
 
           {/* 3D Ledger Card */}
           <div className="landing__hero-visual animate-float" aria-hidden="true">
-            <div className="ledger-card glass-panel">
+            <div className="ledger-card">
               <div className="ledger-card__header">
                 <span className="ledger-card__dot" style={{ background: '#22C55E' }} />
-                <span className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>LIVE · Immutable Ledger</span>
+                <span className="text-label-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>LIVE · Immutable Ledger</span>
                 <span className="ledger-card__dot animate-pulse-green" />
               </div>
               <div className="ledger-card__entries">

@@ -48,15 +48,14 @@
   width: 100%;
 }
 
+/* Each nav item — icon only, tooltip on hover */
 .sidebar__item {
   position: relative;
   width: 100%;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: var(--space-3) 0;
+  padding: var(--space-4) 0;
   color: var(--color-on-primary-container);
   text-decoration: none;
   transition: color 150ms ease, background 150ms ease;
@@ -72,6 +71,7 @@
   color: #FFFFFF;
 }
 
+/* Active indicator bar */
 .sidebar__active-bar {
   position: absolute;
   left: 0;
@@ -88,23 +88,59 @@
   transform: translateY(-50%) scaleY(1);
 }
 
+/* Icon */
 .sidebar__icon {
   font-size: 22px !important;
   transition: color 150ms ease;
 }
 
+/* Labels — hidden by default, revealed via tooltip */
 .sidebar__label {
-  font-size: 0.55rem;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  opacity: 0.7;
-  transition: opacity 150ms ease;
+  display: none;
 }
 
-.sidebar__item--active .sidebar__label,
-.sidebar__item:hover .sidebar__label {
+/* Tooltip that appears on hover */
+.sidebar__item::after {
+  content: attr(data-label);
+  position: absolute;
+  left: calc(var(--sidebar-width) + 8px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-6px);
+  background: #0B1C30;
+  color: #FFFFFF;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 5px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease, transform 120ms ease;
+  z-index: 200;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 16px rgba(9, 20, 38, 0.3);
+}
+
+/* Tooltip arrow */
+.sidebar__item::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--sidebar-width) + 3px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-6px);
+  border: 5px solid transparent;
+  border-right-color: #0B1C30;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease, transform 120ms ease;
+  z-index: 200;
+}
+
+.sidebar__item:hover::after,
+.sidebar__item:hover::before {
   opacity: 1;
+  transform: translateY(-50%) translateX(0);
 }
 
 /* Footer */
