@@ -97,9 +97,10 @@ export default function App() {
               <Route path="/funds"    element={<FundDashboard />} />
               <Route path="/funds/:id" element={<FundDashboard />} />
 
-              {/* R3 — Milestone Timeline */}
-              <Route path="/milestones"     element={<MilestoneTimeline />} />
+              {/* R3 — Milestone Timeline (optional per-milestone deep link) */}
+              <Route path="/milestones/:id/m/:milestoneId" element={<MilestoneTimeline />} />
               <Route path="/milestones/:id" element={<MilestoneTimeline />} />
+              <Route path="/milestones" element={<MilestoneTimeline />} />
 
               {/* G3 — Communication Hub */}
               <Route path="/communicate"     element={<CommunicationHub />} />

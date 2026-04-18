@@ -24,6 +24,8 @@ export function InvestmentProvider({ children }) {
 
   // ── Core state ──────────────────────────────────────────────
   const [startups,      setStartups]      = useState([]);
+  /** Full profile for the logged-in founder (single owned startup). */
+  const [myStartup,     setMyStartup]     = useState(null);
   const [investments,   setInvestments]   = useState([]);
   const [auditEntries,  setAuditEntries]  = useState([]);
   const [notifications, setNotifications] = useState([]);
@@ -46,6 +48,17 @@ export function InvestmentProvider({ children }) {
       setStartups(data.data || []);
     } catch (e) {
       console.error('fetchStartups:', e.message);
+    }
+  }, [tok]);
+
+  const fetchMyStartup = useCallback(async () => {
+    try {
+      const data = await api('GET', '/startups/me/profile', null, tok());
+      setMyStartup(data.data || null);
+      return data.data;
+    } catch {
+      setMyStartup(null);
+      return null;
     }
   }, [tok]);
 
@@ -194,7 +207,7 @@ export function InvestmentProvider({ children }) {
   useEffect(() => {
     if (!isAuthenticated || !tok()) {
       // Reset on logout
-      setStartups([]); setInvestments([]); setAuditEntries([]);
+      setStartups([]); setMyStartup(null); setInvestments([]); setAuditEntries([]);
       setNotifications([]); setDashboardData(null);
       fetchedRef.current = false;
       return;
@@ -213,6 +226,7 @@ export function InvestmentProvider({ children }) {
           fetchNotifications(),
           // Only load investments for investors (startup role doesn't have them)
           user?.role !== 'startup' ? fetchInvestments() : Promise.resolve(),
+          user?.role === 'startup' ? fetchMyStartup() : Promise.resolve(),
         ]);
       } catch (e) {
         setError(e.message);
@@ -222,7 +236,7 @@ export function InvestmentProvider({ children }) {
       }
     };
     load();
-  }, [isAuthenticated, user?.role, tok, fetchStartups, fetchDashboard, fetchNotifications, fetchInvestments]);
+  }, [isAuthenticated, user?.role, tok, fetchStartups, fetchMyStartup, fetchDashboard, fetchNotifications, fetchInvestments]);
 
   // ── Derived values ──────────────────────────────────────────
   const portfolioValue   = investments.reduce((s, i) => s + (i.amount || 0), 0);
@@ -241,6 +255,7 @@ export function InvestmentProvider({ children }) {
   const value = {
     // State
     startups,
+    myStartup,
     investments,
     auditEntries,
     notifications,
@@ -258,6 +273,7 @@ export function InvestmentProvider({ children }) {
 
     // Fetch functions (pages call these on mount)
     fetchStartups,
+    fetchMyStartup,
     fetchStartup,
     fetchInvestments,
     fetchAuditEntries,

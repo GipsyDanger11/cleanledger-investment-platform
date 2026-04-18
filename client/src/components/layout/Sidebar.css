@@ -143,6 +143,156 @@
   transform: translateY(-50%) translateX(0);
 }
 
+/* Notifications (moved from app top bar — vertical nav only) */
+.sidebar__notif-wrap {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: var(--space-2) 0 var(--space-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.sidebar__bell {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, border-color 0.2s;
+}
+.sidebar__bell:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+.sidebar__bell-icon {
+  font-size: 22px !important;
+  color: #FFFFFF !important;
+}
+.sidebar__bell-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #D32F2F;
+  color: #FFF;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid var(--color-primary-container, #1565C0);
+}
+
+.sidebar__notif-drop {
+  position: absolute;
+  left: calc(var(--sidebar-width) + 8px);
+  bottom: 0;
+  width: 320px;
+  max-height: min(420px, 70vh);
+  background: #FFFFFF;
+  border: 1px solid #E0E0E0;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  z-index: 300;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar__notif-drop-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid #F5F5F5;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111;
+}
+.sidebar__notif-readall {
+  font-size: 11px;
+  color: #1976D2;
+  font-weight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+.sidebar__notif-empty {
+  padding: 28px;
+  text-align: center;
+  font-size: 13px;
+  color: #9E9E9E;
+}
+.sidebar__notif-list {
+  overflow-y: auto;
+  max-height: 360px;
+}
+.sidebar__notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #F5F5F5;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.sidebar__notif-item:hover {
+  background: #F8FAFF;
+}
+.sidebar__notif-item--unread {
+  background: #F0F7FF;
+}
+.sidebar__notif-item-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #E3F2FD;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.sidebar__notif-item-body {
+  flex: 1;
+  min-width: 0;
+}
+.sidebar__notif-item-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #111;
+  line-height: 1.35;
+}
+.sidebar__notif-item-text {
+  font-size: 11px;
+  color: #757575;
+  margin-top: 2px;
+  line-height: 1.35;
+}
+.sidebar__notif-item-time {
+  font-size: 10px;
+  color: #BDBDBD;
+  margin-top: 4px;
+}
+.sidebar__notif-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1976D2;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
 /* Footer */
 .sidebar__footer {
   display: flex;

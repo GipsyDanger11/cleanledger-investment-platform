@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { useInvestment } from '../context/InvestmentContext';
 import { useAuth } from '../context/AuthContext';
 import './MilestoneTimeline.css';
@@ -67,8 +68,17 @@ function TrustBreakdown({ startup }) {
 }
 
 export default function MilestoneTimeline() {
+  const { id: routeStartupId, milestoneId: routeMilestoneId } = useParams();
   const { user } = useAuth();
-  const { startups, fetchStartups, castVote, submitMilestoneProof } = useInvestment();
+  const { startups, fetchStartups, castVote, submitMilestoneProof, myStartup, fetchMyStartup } = useInvestment();
+  const isFounder = user?.role === 'startup';
+  const hubStartups = useMemo(() => {
+    if (!isFounder) return startups;
+    if (myStartup) return [myStartup];
+    const owned = (startups || []).filter((s) => String(s.createdBy) === String(user?._id));
+    return owned.length ? owned : [];
+  }, [isFounder, myStartup, startups, user?._id]);
+
   const [selectedStartupId, setSelectedStartupId] = useState('');
   const [proofForm, setProofForm]   = useState({ proofUrl: '', proofNote: '' });
   const [activeModal, setActiveModal] = useState(null);
@@ -81,12 +91,31 @@ export default function MilestoneTimeline() {
   }, [fetchStartups]);
 
   useEffect(() => {
-    if (!selectedStartupId && startups.length > 0) {
-      setSelectedStartupId(startups[0]._id);
-    }
-  }, [selectedStartupId, startups]);
+    if (isFounder) fetchMyStartup();
+  }, [isFounder, fetchMyStartup]);
 
-  const startup = startups.find(s => s._id === selectedStartupId) || startups[0];
+  useEffect(() => {
+    if (!routeStartupId || !hubStartups.length) return;
+    const exists = hubStartups.some((s) => String(s._id) === String(routeStartupId));
+    if (exists) setSelectedStartupId(String(routeStartupId));
+  }, [routeStartupId, hubStartups]);
+
+  useEffect(() => {
+    if (routeStartupId) return;
+    if (hubStartups.length > 0 && !selectedStartupId) {
+      setSelectedStartupId(hubStartups[0]._id);
+    }
+  }, [routeStartupId, hubStartups, selectedStartupId]);
+
+  useEffect(() => {
+    if (!routeMilestoneId) return;
+    const t = requestAnimationFrame(() => {
+      document.getElementById(`mt-ms-${routeMilestoneId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    return () => cancelAnimationFrame(t);
+  }, [routeMilestoneId, selectedStartupId]);
+
+  const startup = hubStartups.find((s) => String(s._id) === String(selectedStartupId)) || hubStartups[0];
   const milestones = startup?.milestones || [];
   const completedCount = milestones.filter(m => ['verified','released'].includes(m.status)).length;
   const overallPct = milestones.length > 0 ? (completedCount / milestones.length) * 100 : 0;
@@ -102,6 +131,7 @@ export default function MilestoneTimeline() {
     try {
       await castVote(selectedStartupId, milestoneId, approved);
       await fetchStartups();
+      if (isFounder) await fetchMyStartup();
       setMsg(`Vote cast — ${approved ? '✓ Approved' : '✗ Rejected'}`);
       setTimeout(() => setMsg(''), 3000);
     } finally {
@@ -114,6 +144,7 @@ export default function MilestoneTimeline() {
     try {
       await submitMilestoneProof(selectedStartupId, mid, proofForm.proofUrl, proofForm.proofNote);
       await fetchStartups();
+      if (isFounder) await fetchMyStartup();
       setMsg('Proof submitted! Investors have 48 hours to vote.');
       setActiveModal(null);
       setProofForm({ proofUrl: '', proofNote: '' });
@@ -122,6 +153,16 @@ export default function MilestoneTimeline() {
       setSubmitting(false);
     }
   };
+
+  if (!startup) {
+    return (
+      <div className="milestone-timeline" style={{ padding: 24 }}>
+        <p className="text-body-md text-secondary">
+          {isFounder ? 'No startup profile found. Complete registration to view milestones.' : 'No startups available.'}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="milestone-timeline">
@@ -139,7 +180,7 @@ export default function MilestoneTimeline() {
               value={selectedStartupId}
               onChange={e => setSelectedStartupId(e.target.value)}
             >
-              {startups.map(s => (
+              {hubStartups.map(s => (
                 <option key={s._id} value={s._id}>{s.name}</option>
               ))}
             </select>
@@ -232,7 +273,11 @@ export default function MilestoneTimeline() {
           const countdown = m.status === 'submitted' ? getCountdown(m.voteDeadline) : null;
 
           return (
-            <div key={m._id || i} className={`mt-item ${m.redFlagged ? 'mt-item--flagged' : ''}`}>
+            <div
+              key={m._id || i}
+              id={m._id ? `mt-ms-${m._id}` : undefined}
+              className={`mt-item ${m.redFlagged ? 'mt-item--flagged' : ''}`}
+            >
               {/* Connector */}
               <div className="mt-connector">
                 <div className="mt-connector__dot" style={{ background: meta.color, boxShadow: `0 0 0 4px ${meta.bg}` }}>
@@ -305,6 +350,16 @@ export default function MilestoneTimeline() {
                         <span className="material-symbols-outlined" style={{ fontSize: 15 }}>open_in_new</span>
                         View Proof
                       </a>
+                    )}
+                    {m._id && selectedStartupId && (
+                      <Link
+                        to={`/milestones/${selectedStartupId}/m/${m._id}`}
+                        className="mt-btn mt-btn--ghost"
+                        style={{ textDecoration: 'none' }}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 15 }}>open_in_new</span>
+                        Milestone page
+                      </Link>
                     )}
                   </div>
                 </div>

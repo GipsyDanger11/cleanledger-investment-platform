@@ -62,8 +62,9 @@ exports.listStartups = catchAsync(async (req, res) => {
   if (req.query.category) filter.category = req.query.category;
   if (req.query.verificationStatus) filter.verificationStatus = req.query.verificationStatus;
 
+  // Full documents: dashboards (funds, milestones, communicate) need expenses,
+  // milestones, fundAllocation, createdBy, etc.—a narrow select hid updates from list refetches.
   const startups = await Startup.find(filter)
-    .select('name category sector geography description tags fundingTarget totalRaised backers trustScore esgScore verificationStatus profileCompletionScore createdAt')
     .sort({ trustScore: -1 })
     .lean();
   res.json({ success: true, count: startups.length, data: startups });

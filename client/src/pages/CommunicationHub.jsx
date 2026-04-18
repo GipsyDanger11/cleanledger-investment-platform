@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
 import { useInvestment } from '../context/InvestmentContext';
 import { useAuth } from '../context/AuthContext';
 import './CommunicationHub.css';
@@ -33,9 +34,12 @@ function formatDate(d) {
 }
 
 export default function CommunicationHub() {
+  const { id: routeStartupId } = useParams();
   const { user } = useAuth();
   const {
     startups,
+    myStartup,
+    fetchMyStartup,
     notifications,
     fetchStartups,
     fetchNotifications,
@@ -67,6 +71,12 @@ export default function CommunicationHub() {
   const [notifFilter, setNotifFilter]     = useState('all');
 
   const isFounder = user?.role === 'startup';
+  const hubStartups = useMemo(() => {
+    if (!isFounder) return startups;
+    if (myStartup) return [myStartup];
+    const owned = (startups || []).filter((s) => String(s.createdBy) === String(user?._id));
+    return owned.length ? owned : [];
+  }, [isFounder, myStartup, startups, user?._id]);
 
   useEffect(() => {
     fetchStartups();
@@ -74,13 +84,21 @@ export default function CommunicationHub() {
   }, [fetchStartups, fetchNotifications]);
 
   useEffect(() => {
-    if (!selectedStartupId && startups.length > 0) {
-      setSelectedStartupId(startups[0]._id);
-    }
-  }, [selectedStartupId, startups]);
+    if (isFounder) fetchMyStartup();
+  }, [isFounder, fetchMyStartup]);
 
-  const startup = startups.find(s => s._id === selectedStartupId) || startups[0];
-  const milestones    = startup?.milestones || [];
+  useEffect(() => {
+    if (routeStartupId && hubStartups.some((s) => String(s._id) === String(routeStartupId))) {
+      setSelectedStartupId(String(routeStartupId));
+      return;
+    }
+    if (!selectedStartupId && hubStartups.length > 0) {
+      setSelectedStartupId(hubStartups[0]._id);
+    }
+  }, [routeStartupId, hubStartups, selectedStartupId]);
+
+  const startup = hubStartups.find((s) => String(s._id) === String(selectedStartupId)) || hubStartups[0];
+  const milestones = startup?.milestones || [];
 
   useEffect(() => {
     if (!selectedStartupId) return;
@@ -92,14 +110,17 @@ export default function CommunicationHub() {
       setQa(qaData || []);
       setAnnouncements(annData || []);
 
+      const ms = hubStartups.find((s) => String(s._id) === String(selectedStartupId))?.milestones || [];
       const comments = {};
-      for (const m of milestones) {
-        comments[m._id] = await fetchMilestoneComments(selectedStartupId, m._id);
+      for (const m of ms) {
+        if (m._id) {
+          comments[m._id] = await fetchMilestoneComments(selectedStartupId, m._id);
+        }
       }
       setMilestoneComments(comments);
     };
     load();
-  }, [selectedStartupId, fetchQA, fetchAnnouncements, fetchMilestoneComments, startup?._id]);
+  }, [selectedStartupId, fetchQA, fetchAnnouncements, fetchMilestoneComments, hubStartups, milestones.length]);
 
   const unansweredCount = qa.filter(q => !q.isAnswered).length;
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -118,6 +139,9 @@ export default function CommunicationHub() {
       setQuestionText('');
       setIsAnonymous(false);
       setTimeout(() => setMsg(''), 3000);
+    } catch (e) {
+      setMsg(e?.message || 'Could not post question');
+      setTimeout(() => setMsg(''), 5000);
     } finally {
       setSubmitting(false);
     }
@@ -129,10 +153,14 @@ export default function CommunicationHub() {
     try {
       await answerQuestion(selectedStartupId, qid, answerText.trim());
       setQa(await fetchQA(selectedStartupId));
+      if (isFounder) await fetchMyStartup();
       setAnsweringId(null);
       setAnswerText('');
       setMsg('Answer posted!');
       setTimeout(() => setMsg(''), 3000);
+    } catch (e) {
+      setMsg(e?.message || 'Could not post answer');
+      setTimeout(() => setMsg(''), 5000);
     } finally {
       setSubmitting(false);
     }
@@ -144,10 +172,14 @@ export default function CommunicationHub() {
     try {
       await postAnnouncement(selectedStartupId, annText.trim(), pinAnn);
       setAnnouncements(await fetchAnnouncements(selectedStartupId));
+      if (isFounder) await fetchMyStartup();
       setAnnText('');
       setPinAnn(false);
       setMsg('Announcement posted! Investors notified.');
       setTimeout(() => setMsg(''), 3000);
+    } catch (e) {
+      setMsg(e?.message || 'Could not post announcement');
+      setTimeout(() => setMsg(''), 5000);
     } finally {
       setSubmitting(false);
     }
@@ -158,21 +190,16 @@ export default function CommunicationHub() {
     setSubmitting(true);
     try {
       await postMilestoneComment(selectedStartupId, milestoneId, milestoneCommentText.trim());
-      setMilestoneComments(prev => ({
-        ...prev,
-        [milestoneId]: (prev[milestoneId] || []).concat([{
-          _id: `temp-${Date.now()}`,
-          content: milestoneCommentText.trim(),
-          author: { name: commentAnonymous ? 'Anonymous Investor' : user?.name || 'Investor' },
-          createdAt: new Date().toISOString(),
-          isAnonymous: commentAnonymous,
-        }]),
-      }));
+      const fresh = await fetchMilestoneComments(selectedStartupId, milestoneId);
+      setMilestoneComments((prev) => ({ ...prev, [milestoneId]: fresh || [] }));
       setCommentMilestoneId(null);
       setMilestoneCommentText('');
       setCommentAnonymous(false);
       setMsg('Comment added!');
       setTimeout(() => setMsg(''), 3000);
+    } catch (e) {
+      setMsg(e?.message || 'Could not post comment');
+      setTimeout(() => setMsg(''), 5000);
     } finally {
       setSubmitting(false);
     }
@@ -181,6 +208,18 @@ export default function CommunicationHub() {
   const markAllRead = () => {
     // handled in Dashboard + notifications endpoint; this tab is read-only
   };
+
+  if (isFounder && hubStartups.length === 0) {
+    return (
+      <div className="ch2-root">
+        <main className="ch2-content" style={{ maxWidth: 560, margin: '0 auto', padding: 32 }}>
+          <p className="text-body-md text-secondary" style={{ margin: 0 }}>
+            Create or finish your startup profile to use Q&amp;A, announcements, and milestone chat.
+          </p>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="ch2-root">
@@ -200,7 +239,7 @@ export default function CommunicationHub() {
             value={selectedStartupId}
             onChange={e => setSelectedStartupId(e.target.value)}
           >
-            {startups.map(s => (
+            {hubStartups.map(s => (
               <option key={s._id} value={s._id}>{s.name}</option>
             ))}
           </select>

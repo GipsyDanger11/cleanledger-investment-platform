@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MilestoneBar from '../components/ui/MilestoneBar';
 import TrustScoreBadge from '../components/ui/TrustScoreBadge';
@@ -9,13 +9,48 @@ import './StartupDetails.css';
 export default function StartupDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { startups } = useInvestment();
+  const { startups, fetchStartup } = useInvestment();
+  const [detail, setDetail] = useState(null);
+  const [loadError, setLoadError] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showDAOModal, setShowDAOModal] = useState(false);
   const [voted, setVoted] = useState(null);
 
-  const startup = startups.find((s) => s._id === id);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(false);
+    (async () => {
+      try {
+        const full = await fetchStartup(id);
+        if (!cancelled) {
+          setDetail(full);
+          setLoadError(!full);
+        }
+      } catch {
+        if (!cancelled) {
+          setDetail(null);
+          setLoadError(true);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [id, fetchStartup]);
 
-  if (!startup) {
+  const fromList = startups.find((s) => String(s._id) === String(id));
+  const startup = detail || fromList;
+
+  if (loading) {
+    return (
+      <div style={{ padding: 'var(--space-16)', textAlign: 'center' }} className="text-body-md text-secondary">
+        Loading startup…
+      </div>
+    );
+  }
+
+  if (!startup || loadError) {
     return (
       <div style={{ padding: 'var(--space-16)', textAlign: 'center' }}>
         <p className="text-body-md text-secondary">Startup not found.</p>
@@ -26,8 +61,10 @@ export default function StartupDetails() {
     );
   }
 
-  const pct = Math.round((startup.totalRaised / startup.fundingTarget) * 100);
-  const hasDAORequired = startup.milestones.some((m) => m.status === 'in_progress' && m.daoVoteRequired);
+  const milestones = startup.milestones || [];
+  const tags = startup.tags || [];
+  const pct = Math.round(((startup.totalRaised || 0) / (startup.fundingTarget || 1)) * 100);
+  const hasDAORequired = milestones.some((m) => m.status === 'in_progress' && m.daoVoteRequired);
 
   const handleVote = (vote) => {
     setVoted(vote);
@@ -99,7 +136,7 @@ export default function StartupDetails() {
           {/* Milestones */}
           <div className="card">
             <h2 className="text-title" style={{ marginBottom: 'var(--space-6)' }}>Milestone Roadmap</h2>
-            <MilestoneBar milestones={startup.milestones} />
+            <MilestoneBar milestones={milestones} />
           </div>
 
           {/* Verification Documents */}
@@ -150,7 +187,7 @@ export default function StartupDetails() {
               </div>
               <div className="startup-details__stat">
                 <span className="text-label-sm text-meta">Backers</span>
-                <span className="text-title tabular">{startup.backers.toLocaleString()}</span>
+                <span className="text-title tabular">{(startup.backers ?? 0).toLocaleString()}</span>
               </div>
               <div className="startup-details__stat">
                 <span className="text-label-sm text-meta">ESG Score</span>
@@ -168,7 +205,7 @@ export default function StartupDetails() {
                 <div className="progress-bar__fill" style={{ width: `${pct}%` }} />
               </div>
               <p className="text-label-sm text-meta" style={{ marginTop: 'var(--space-2)' }}>
-                {formatCurrency(startup.fundingTarget - startup.totalRaised)} remaining
+                {formatCurrency((startup.fundingTarget || 0) - (startup.totalRaised || 0))} remaining
               </p>
             </div>
 
@@ -190,7 +227,7 @@ export default function StartupDetails() {
           <div className="card">
             <h3 className="text-label-md text-secondary" style={{ marginBottom: 'var(--space-3)' }}>Tags</h3>
             <div className="flex" style={{ flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-              {startup.tags.map((t) => (
+              {tags.map((t) => (
                 <span key={t} className="chip chip--filter">{t}</span>
               ))}
             </div>

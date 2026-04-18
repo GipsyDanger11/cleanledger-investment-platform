@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useInvestment } from '../context/InvestmentContext';
+import { useAuth } from '../context/AuthContext';
 import './FundDashboard.css';
 
 const CATEGORY_META = {
@@ -48,7 +49,16 @@ function ExpenseCategoryBar({ cat, planned, actual }) {
 }
 
 export default function FundDashboard() {
-  const { startups, fetchStartups, addExpense } = useInvestment();
+  const { user } = useAuth();
+  const { startups, fetchStartups, addExpense, myStartup, fetchMyStartup } = useInvestment();
+  const isFounder = user?.role === 'startup';
+  const hubStartups = useMemo(() => {
+    if (!isFounder) return startups;
+    if (myStartup) return [myStartup];
+    const owned = (startups || []).filter((s) => String(s.createdBy) === String(user?._id));
+    return owned.length ? owned : [];
+  }, [isFounder, myStartup, startups, user?._id]);
+
   const [selectedStartupId, setSelectedStartupId] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
   const [expenseForm, setExpenseForm] = useState({ category: 'tech', amount: '', description: '', receiptUrl: '' });
@@ -59,13 +69,25 @@ export default function FundDashboard() {
   }, [fetchStartups]);
 
   useEffect(() => {
-    if (!selectedStartupId && startups.length > 0) {
-      setSelectedStartupId(startups[0]._id);
-    }
-  }, [selectedStartupId, startups]);
+    if (isFounder) fetchMyStartup();
+  }, [isFounder, fetchMyStartup]);
 
-  const startup = startups.find(s => s._id === selectedStartupId) || startups[0];
-  if (!startup) return null;
+  useEffect(() => {
+    if (!hubStartups.length) return;
+    const ok = selectedStartupId && hubStartups.some((s) => String(s._id) === String(selectedStartupId));
+    if (!ok) setSelectedStartupId(hubStartups[0]._id);
+  }, [selectedStartupId, hubStartups]);
+
+  const startup = hubStartups.find((s) => String(s._id) === String(selectedStartupId)) || hubStartups[0];
+  if (!startup) {
+    return (
+      <div className="fund-dashboard" style={{ padding: 24 }}>
+        <p className="text-body-md text-secondary">
+          {isFounder ? 'No startup profile found. Complete registration to manage funds.' : 'No startups available.'}
+        </p>
+      </div>
+    );
+  }
 
   const alloc = startup.fundAllocation || {};
   const categories = Object.keys(CATEGORY_META);
@@ -90,6 +112,7 @@ export default function FundDashboard() {
         receiptUrl: expenseForm.receiptUrl,
       });
       await fetchStartups();
+      if (isFounder) await fetchMyStartup();
       setSubmitMsg('Expense recorded and immutable audit entry created! ✓');
       setExpenseForm({ category: 'tech', amount: '', description: '', receiptUrl: '' });
       setTimeout(() => setSubmitMsg(''), 4000);
@@ -113,7 +136,7 @@ export default function FundDashboard() {
             value={selectedStartupId}
             onChange={e => setSelectedStartupId(e.target.value)}
           >
-            {startups.map(s => (
+            {hubStartups.map(s => (
               <option key={s._id} value={s._id}>{s.name}</option>
             ))}
           </select>
