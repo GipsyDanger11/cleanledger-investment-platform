@@ -7,6 +7,8 @@ const NAV_ITEMS = [
   { icon: 'storefront',      label: 'Marketplace', to: '/marketplace' },
   { icon: 'pie_chart',       label: 'Portfolio',   to: '/portfolio'   },
   { icon: 'account_balance', label: 'Ledger',      to: '/ledger'      },
+  { icon: 'savings',         label: 'Funds',       to: '/funds'       },
+  { icon: 'flag',            label: 'Milestones',  to: '/milestones'  },
   { icon: 'settings',        label: 'Settings',    to: '/settings'    },
 ];
 

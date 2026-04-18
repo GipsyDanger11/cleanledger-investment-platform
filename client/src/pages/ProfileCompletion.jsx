@@ -1,452 +1,562 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import apiClient from '../utils/apiClient';
+import apiClient from '../services/apiClient';
 import './ProfileCompletion.css';
 
-const STARTUP_STEPS = [
-  { id: 'basic',   title: 'Basic Info',        desc: 'Name, bio & contact details' },
-  { id: 'company', title: 'Company Details',    desc: 'Company info & funding goals' },
-  { id: 'team',    title: 'Team & Documents',   desc: 'Team members & verification' },
+const STEPS = [
+  { id: 1, title: 'Basic Info',      desc: 'Company details',       icon: 'business' },
+  { id: 2, title: 'Team',            desc: 'Members & verification', icon: 'group' },
+  { id: 3, title: 'Business Plan',   desc: 'Pitch & AI summary',     icon: 'description' },
+  { id: 4, title: 'Fund Allocation', desc: 'Budget breakdown',       icon: 'pie_chart' },
+  { id: 5, title: 'Milestones',      desc: '3-5 key milestones',     icon: 'flag' },
 ];
 
-const INVESTOR_STEPS = [
-  { id: 'basic',      title: 'Basic Info',            desc: 'Name, bio & contact details' },
-  { id: 'investment', title: 'Investment Preferences', desc: 'Focus, ticket size & portfolio' },
-  { id: 'docs',       title: 'Verification',          desc: 'KYC documents & LinkedIn' },
-];
+const CATEGORIES = ['FinTech','HealthTech','EdTech','AgriTech','CleanTech','SaaS','E-Commerce','Other'];
+const SECTORS    = ['Technology','Healthcare','Education','Agriculture','Finance','Real Estate','Retail','Other'];
+const TIMELINES  = ['6 months','12 months','18 months','24 months'];
+const STAGES     = ['pre-seed','seed','series-a','series-b','growth'];
 
 export default function ProfileCompletion() {
-  const { user, isAuthenticated, updateProfile } = useAuth();
+  const { user, updateUser } = useAuth();
   const navigate = useNavigate();
 
-  const [currentStep, setCurrentStep] = useState(0);
-  const [score, setScore] = useState(user?.profileCompletionScore || 0);
+  const [step, setStep] = useState(1);
+  const [score, setScore] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [completed, setCompleted] = useState(false);
+  const [error, setError] = useState('');
+  const [startupId, setStartupId] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState(null);
 
-  // Form state
-  const [form, setForm] = useState({
-    name: user?.name || '',
-    bio: '',
-    phone: '',
-    linkedIn: '',
-    organization: user?.organization || '',
-    companyName: '',
-    sector: '',
-    fundingGoal: '',
-    stage: '',
-    website: '',
-    teamMembers: [{ name: '', role: '', linkedIn: '' }],
-    investmentFocus: '',
-    minTicket: '',
-    maxTicket: '',
-    portfolioSize: '',
+  // Form state per step
+  const [basic, setBasic] = useState({
+    name: '', category: 'FinTech', sector: 'Technology', geography: '',
+    description: '', website: '', incorporationProofUrl: '',
   });
 
-  const role = user?.role || 'investor';
-  const steps = role === 'startup' ? STARTUP_STEPS : INVESTOR_STEPS;
+  const [team, setTeam] = useState([
+    { name: '', role: '', linkedIn: '' },
+  ]);
 
-  useEffect(() => {
-    if (!isAuthenticated) navigate('/auth');
-  }, [isAuthenticated, navigate]);
+  const [plan, setPlan] = useState({ businessPlanUrl: '', pitchText: '', pitchDeckUrl: '' });
 
-  // SEO
+  const [funds, setFunds] = useState({
+    fundingTarget: '', fundingTimeline: '12 months',
+    tech: 25, marketing: 25, operations: 25, legal: 25,
+  });
+
+  const [milestones, setMilestones] = useState([
+    { title: '', description: '', targetDate: '', successCriteria: '', tranchePct: 0 },
+  ]);
+
+  // Check existing startup profile
   useEffect(() => {
-    document.title = 'Complete Your Profile — CleanLedger';
-    return () => { document.title = 'CleanLedger'; };
+    apiClient.get('/startups/me/profile').then(res => {
+      const s = res.data.data;
+      setStartupId(s._id);
+      setScore(s.profileCompletionScore || 0);
+      setBasic(prev => ({ ...prev, name: s.name || '', category: s.category || 'FinTech',
+        sector: s.sector || '', geography: s.geography || '', description: s.description || '',
+        website: s.website || '', incorporationProofUrl: s.incorporationProofUrl || '' }));
+      if (s.teamMembers?.length) setTeam(s.teamMembers);
+      if (s.milestones?.length) setMilestones(s.milestones.map(m => ({
+        title: m.title, description: m.description || '', targetDate: m.targetDate?.split('T')[0] || '',
+        successCriteria: m.successCriteria || '', tranchePct: m.tranchePct || 0,
+      })));
+      if (s.fundAllocation) {
+        setFunds(prev => ({ ...prev,
+          fundingTarget: s.fundingTarget || '',
+          fundingTimeline: s.fundingTimeline || '12 months',
+          tech: s.fundAllocation.tech?.planned || 25,
+          marketing: s.fundAllocation.marketing?.planned || 25,
+          operations: s.fundAllocation.operations?.planned || 25,
+          legal: s.fundAllocation.legal?.planned || 25,
+        }));
+      }
+    }).catch(() => {});
   }, []);
 
-  const updateField = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
+  const totalFundPct = Number(funds.tech) + Number(funds.marketing) +
+                       Number(funds.operations) + Number(funds.legal);
 
-  // Team member management
-  const addTeamMember = () => {
-    setForm((prev) => ({
-      ...prev,
-      teamMembers: [...prev.teamMembers, { name: '', role: '', linkedIn: '' }],
-    }));
-  };
+  const totalTranchePct = milestones.reduce((s, m) => s + Number(m.tranchePct || 0), 0);
 
-  const updateTeamMember = (index, field, value) => {
-    setForm((prev) => {
-      const updated = [...prev.teamMembers];
-      updated[index] = { ...updated[index], [field]: value };
-      return { ...prev, teamMembers: updated };
-    });
-  };
-
-  const removeTeamMember = (index) => {
-    setForm((prev) => ({
-      ...prev,
-      teamMembers: prev.teamMembers.filter((_, i) => i !== index),
-    }));
-  };
-
-  // Calculate local score preview
-  const localScore = useMemo(() => {
-    let s = 0;
-    if (form.name) s += 10;
-    if (role) s += 10;
-    if (form.organization || form.companyName) s += 20;
-    if (form.linkedIn) s += 15;
-    if (role === 'startup') {
-      if (form.fundingGoal) s += 10;
-      if (form.sector) s += 10;
-      if (form.teamMembers.some((t) => t.name)) s += 10;
-      s += 0; // docs not uploaded yet = 0
-    } else {
-      if (form.investmentFocus) s += 10;
-      if (form.minTicket || form.maxTicket) s += 10;
-      if (form.portfolioSize) s += 10;
-    }
-    return Math.min(s, 100);
-  }, [form, role]);
-
-  useEffect(() => {
-    setScore(localScore);
-  }, [localScore]);
-
-  const handleSave = async () => {
-    setSaving(true);
+  // ── Save current step ────────────────────────────────────
+  const saveStep = async () => {
+    setSaving(true); setError('');
     try {
-      const payload = { ...form };
-      // Clean up numeric fields
-      if (payload.fundingGoal) payload.fundingGoal = Number(payload.fundingGoal);
-      if (payload.minTicket) payload.minTicket = Number(payload.minTicket);
-      if (payload.maxTicket) payload.maxTicket = Number(payload.maxTicket);
-      if (payload.portfolioSize) payload.portfolioSize = Number(payload.portfolioSize);
-      // Filter out empty team members
-      payload.teamMembers = payload.teamMembers.filter((t) => t.name);
+      let payload = {};
 
-      const { data } = await apiClient.put('/profile/complete', payload);
-      if (data.profileCompletionScore) setScore(data.profileCompletionScore);
+      if (step === 1) {
+        payload = { ...basic };
+      } else if (step === 2) {
+        payload = { teamMembers: team.filter(t => t.name.trim()) };
+      } else if (step === 3) {
+        payload = { businessPlanUrl: plan.businessPlanUrl, pitchDeckUrl: plan.pitchDeckUrl };
+        if (aiAnalysis) payload.businessPlanSummary = aiAnalysis.summary;
+      } else if (step === 4) {
+        payload = {
+          fundingTarget: Number(funds.fundingTarget),
+          fundingTimeline: funds.fundingTimeline,
+          fundAllocation: {
+            tech:       { planned: Number(funds.tech) },
+            marketing:  { planned: Number(funds.marketing) },
+            operations: { planned: Number(funds.operations) },
+            legal:      { planned: Number(funds.legal) },
+          },
+        };
+      } else if (step === 5) {
+        // Milestones saved individually
+        for (const m of milestones.filter(m => m.title.trim())) {
+          await apiClient.post(`/startups/${startupId}/milestones`, {
+            title: m.title, description: m.description,
+            targetDate: m.targetDate, successCriteria: m.successCriteria,
+            tranchePct: Number(m.tranchePct),
+          }).catch(() => {}); // May already exist
+        }
+        setSaving(false);
+        navigate('/dashboard');
+        return;
+      }
 
-      // Update auth context
-      if (updateProfile && data.user) updateProfile(data.user);
-    } catch {
-      // Silently fail — mock mode may not have backend
-    } finally {
-      setSaving(false);
-    }
+      let res;
+      if (!startupId) {
+        payload.fundingTarget = payload.fundingTarget || 100000;
+        res = await apiClient.post('/startups', payload);
+        setStartupId(res.data.data._id);
+      } else {
+        res = await apiClient.patch(`/startups/${startupId}`, payload);
+      }
+      setScore(res.data.data.profileCompletionScore || score);
+      setStep(s => s + 1);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to save. Please try again.');
+    } finally { setSaving(false); }
   };
 
-  const handleNext = async () => {
-    await handleSave();
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      setCompleted(true);
-    }
+  // ── AI Pitch Analyzer ────────────────────────────────────
+  const analyzePitch = async () => {
+    if (!plan.pitchText.trim()) return;
+    setAiLoading(true); setAiAnalysis(null);
+    try {
+      const res = await fetch('http://localhost:5001/summarize-pitch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: plan.pitchText }),
+      });
+      const data = await res.json();
+      if (data.success) setAiAnalysis(data.analysis);
+    } catch { setError('AI service unavailable. You can continue without analysis.'); }
+    finally { setAiLoading(false); }
   };
 
-  const handleSkip = () => {
-    navigate('/dashboard');
+  // ── Team helpers ─────────────────────────────────────────
+  const addTeamMember = () => setTeam(t => [...t, { name: '', role: '', linkedIn: '' }]);
+  const removeTeamMember = i => setTeam(t => t.filter((_, idx) => idx !== i));
+  const updateTeam = (i, field, val) => setTeam(t => t.map((m, idx) => idx === i ? { ...m, [field]: val } : m));
+
+  // ── Milestone helpers ────────────────────────────────────
+  const addMilestone = () => {
+    if (milestones.length >= 5) return;
+    setMilestones(m => [...m, { title:'', description:'', targetDate:'', successCriteria:'', tranchePct:0 }]);
   };
+  const removeMilestone = i => setMilestones(m => m.filter((_, idx) => idx !== i));
+  const updateMilestone = (i, field, val) =>
+    setMilestones(m => m.map((ms, idx) => idx === i ? { ...ms, [field]: val } : ms));
 
-  const handleFinish = () => {
-    navigate('/dashboard');
-  };
-
-  // Score circle math
-  const circumference = 2 * Math.PI * 52;
-  const dashOffset = circumference - (score / 100) * circumference;
-
-  if (completed) {
-    return (
-      <div className="profile-page">
-        <div className="profile-sidebar">
-          <div className="profile-sidebar__logo">
-            <div className="profile-sidebar__logo-mark">CL</div>
-            <div className="profile-sidebar__logo-text">CleanLedger</div>
-          </div>
-        </div>
-        <div className="profile-main">
-          <div className="profile-form-card">
-            <div className="profile-success">
-              <div className="profile-success__icon">
-                <span className="material-symbols-outlined">check_circle</span>
-              </div>
-              <h2 className="profile-success__title">Profile Setup Complete!</h2>
-              <p className="profile-success__desc">
-                Your profile is {score}% complete. You can always update your details later from Settings.
-              </p>
-              <button className="profile-success__btn" onClick={handleFinish} id="profile-go-dashboard">
-                Go to Dashboard
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // ── Score circle ─────────────────────────────────────────
+  const r = 52; const circ = 2 * Math.PI * r;
+  const offset = circ - (score / 100) * circ;
 
   return (
     <div className="profile-page">
-      {/* Left Sidebar */}
-      <div className="profile-sidebar">
+      {/* ── Blue Sidebar ── */}
+      <aside className="profile-sidebar">
         <div className="profile-sidebar__logo">
           <div className="profile-sidebar__logo-mark">CL</div>
-          <div className="profile-sidebar__logo-text">CleanLedger</div>
+          <span className="profile-sidebar__logo-text">CleanLedger</span>
         </div>
 
-        {/* Score Circle */}
         <div className="profile-score">
           <div className="profile-score__circle">
             <svg viewBox="0 0 120 120">
               <defs>
-                <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#0ea5e9" />
-                  <stop offset="100%" stopColor="#6366f1" />
+                <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#BBDEFB"/>
+                  <stop offset="100%" stopColor="#FFFFFF"/>
                 </linearGradient>
               </defs>
-              <circle className="profile-score__bg" cx="60" cy="60" r="52" />
-              <circle
-                className="profile-score__fill"
-                cx="60"
-                cy="60"
-                r="52"
-                strokeDasharray={circumference}
-                strokeDashoffset={dashOffset}
-              />
+              <circle className="profile-score__bg" cx="60" cy="60" r={r}/>
+              <circle className="profile-score__fill" cx="60" cy="60" r={r}
+                strokeDasharray={circ} strokeDashoffset={offset}/>
             </svg>
             <div className="profile-score__value">
-              <div className="profile-score__number">{score}%</div>
-              <div className="profile-score__label">Complete</div>
+              <span className="profile-score__number">{score}</span>
+              <span className="profile-score__label">Score</span>
             </div>
           </div>
           <p className="profile-score__text">
-            Complete your profile to unlock<br />full platform features.
+            {score >= 80 ? 'Excellent profile!' : score >= 50 ? 'Good progress, keep going!' : 'Keep adding details to build trust'}
           </p>
         </div>
 
-        {/* Steps */}
         <div className="profile-steps">
-          {steps.map((step, idx) => {
-            const isDone = idx < currentStep;
-            const isActive = idx === currentStep;
-            return (
-              <div
-                key={step.id}
-                className={`profile-step ${isActive ? 'profile-step--active' : ''} ${isDone ? 'profile-step--completed' : ''}`}
-                onClick={() => idx <= currentStep && setCurrentStep(idx)}
-              >
-                <div className={`profile-step__indicator ${isDone ? 'profile-step__indicator--done' : isActive ? 'profile-step__indicator--active' : 'profile-step__indicator--pending'}`}>
-                  {isDone ? (
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check</span>
-                  ) : (
-                    idx + 1
-                  )}
-                </div>
-                <div className="profile-step__info">
-                  <div className="profile-step__title">{step.title}</div>
-                  <div className="profile-step__desc">{step.desc}</div>
-                </div>
+          {STEPS.map(s => (
+            <div key={s.id} className={`profile-step ${step === s.id ? 'profile-step--active' : ''} ${step > s.id ? 'profile-step--completed' : ''}`}
+              onClick={() => step > s.id && setStep(s.id)}>
+              <div className={`profile-step__indicator ${
+                step === s.id ? 'profile-step__indicator--active' :
+                step > s.id  ? 'profile-step__indicator--done' :
+                                'profile-step__indicator--pending'}`}>
+                {step > s.id
+                  ? <span className="material-symbols-outlined" style={{fontSize:'16px'}}>check</span>
+                  : s.id}
               </div>
-            );
-          })}
+              <div className="profile-step__info">
+                <div className="profile-step__title">{s.title}</div>
+                <div className="profile-step__desc">{s.desc}</div>
+              </div>
+            </div>
+          ))}
         </div>
 
-        <button className="profile-skip" onClick={handleSkip} id="profile-skip-btn">
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>skip_next</span>
+        <button className="profile-skip" onClick={() => navigate('/dashboard')}>
+          <span className="material-symbols-outlined" style={{fontSize:'16px'}}>skip_next</span>
           Skip for now
         </button>
-      </div>
+      </aside>
 
-      {/* Main Content */}
-      <div className="profile-main">
+      {/* ── Main Content ── */}
+      <main className="profile-main">
         <div className="profile-form-card">
-          {/* Step 0: Basic Info */}
-          {currentStep === 0 && (
-            <>
-              <h2 className="profile-form__title">Basic Information</h2>
-              <p className="profile-form__subtitle">Tell us about yourself. This helps build trust with other users on the platform.</p>
-              <div className="profile-form">
-                <div className="profile-field">
-                  <label className="profile-field__label">Full Name</label>
-                  <input className="profile-field__input" type="text" placeholder="John Doe" value={form.name} onChange={(e) => updateField('name', e.target.value)} id="profile-name" />
-                </div>
-                <div className="profile-field">
-                  <label className="profile-field__label">Bio</label>
-                  <textarea className="profile-field__textarea" placeholder="A brief introduction..." value={form.bio} onChange={(e) => updateField('bio', e.target.value)} id="profile-bio" />
-                </div>
-                <div className="profile-row">
-                  <div className="profile-field">
-                    <label className="profile-field__label">Phone</label>
-                    <input className="profile-field__input" type="tel" placeholder="+1 555-0123" value={form.phone} onChange={(e) => updateField('phone', e.target.value)} id="profile-phone" />
-                  </div>
-                  <div className="profile-field">
-                    <label className="profile-field__label">LinkedIn URL</label>
-                    <input className="profile-field__input" type="url" placeholder="https://linkedin.com/in/..." value={form.linkedIn} onChange={(e) => updateField('linkedIn', e.target.value)} id="profile-linkedin" />
-                  </div>
-                </div>
-              </div>
-            </>
+          {error && (
+            <div className="auth-error" style={{marginBottom:'16px'}}>
+              <span className="material-symbols-outlined" style={{fontSize:'18px'}}>error</span>
+              {error}
+            </div>
           )}
 
-          {/* Step 1 for Startup: Company Details */}
-          {currentStep === 1 && role === 'startup' && (
+          {/* ══ Step 1: Basic Info ══ */}
+          {step === 1 && (
             <>
-              <h2 className="profile-form__title">Company Details</h2>
-              <p className="profile-form__subtitle">Share your startup's details to attract the right investors.</p>
+              <h2 className="profile-form__title">Company Information</h2>
+              <p className="profile-form__subtitle">Tell investors about your startup. This is your public-facing profile.</p>
               <div className="profile-form">
                 <div className="profile-row">
                   <div className="profile-field">
-                    <label className="profile-field__label">Company Name</label>
-                    <input className="profile-field__input" type="text" placeholder="Acme Inc." value={form.companyName} onChange={(e) => updateField('companyName', e.target.value)} id="profile-company" />
+                    <label className="profile-field__label">Company Name *</label>
+                    <input className="profile-field__input" placeholder="e.g. AgroTech Solutions"
+                      value={basic.name} onChange={e => setBasic(b => ({...b, name: e.target.value}))}/>
                   </div>
                   <div className="profile-field">
-                    <label className="profile-field__label">Organization</label>
-                    <input className="profile-field__input" type="text" placeholder="Parent org (if any)" value={form.organization} onChange={(e) => updateField('organization', e.target.value)} id="profile-org" />
-                  </div>
-                </div>
-                <div className="profile-row">
-                  <div className="profile-field">
-                    <label className="profile-field__label">Sector</label>
-                    <select className="profile-field__select" value={form.sector} onChange={(e) => updateField('sector', e.target.value)} id="profile-sector">
-                      <option value="">Select sector...</option>
-                      <option value="Clean Energy">Clean Energy</option>
-                      <option value="Water Tech">Water Tech</option>
-                      <option value="Solar Tech">Solar Tech</option>
-                      <option value="Thermal Storage">Thermal Storage</option>
-                      <option value="Carbon Markets">Carbon Markets</option>
-                      <option value="Environmental IoT">Environmental IoT</option>
-                      <option value="Fintech">Fintech</option>
-                      <option value="HealthTech">HealthTech</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  <div className="profile-field">
-                    <label className="profile-field__label">Stage</label>
-                    <select className="profile-field__select" value={form.stage} onChange={(e) => updateField('stage', e.target.value)} id="profile-stage">
-                      <option value="">Select stage...</option>
-                      <option value="pre-seed">Pre-Seed</option>
-                      <option value="seed">Seed</option>
-                      <option value="series-a">Series A</option>
-                      <option value="series-b">Series B</option>
-                      <option value="series-c">Series C</option>
-                      <option value="growth">Growth</option>
+                    <label className="profile-field__label">Category *</label>
+                    <select className="profile-field__select" value={basic.category}
+                      onChange={e => setBasic(b => ({...b, category: e.target.value}))}>
+                      {CATEGORIES.map(c => <option key={c}>{c}</option>)}
                     </select>
                   </div>
                 </div>
                 <div className="profile-row">
                   <div className="profile-field">
-                    <label className="profile-field__label">Funding Goal ($)</label>
-                    <input className="profile-field__input" type="number" placeholder="500000" value={form.fundingGoal} onChange={(e) => updateField('fundingGoal', e.target.value)} id="profile-funding" />
+                    <label className="profile-field__label">Sector *</label>
+                    <select className="profile-field__select" value={basic.sector}
+                      onChange={e => setBasic(b => ({...b, sector: e.target.value}))}>
+                      {SECTORS.map(s => <option key={s}>{s}</option>)}
+                    </select>
                   </div>
+                  <div className="profile-field">
+                    <label className="profile-field__label">Geography *</label>
+                    <input className="profile-field__input" placeholder="e.g. India, SEA"
+                      value={basic.geography} onChange={e => setBasic(b => ({...b, geography: e.target.value}))}/>
+                  </div>
+                </div>
+                <div className="profile-field">
+                  <label className="profile-field__label">Description *</label>
+                  <textarea className="profile-field__textarea" rows={3}
+                    placeholder="What problem do you solve? Who is your customer?"
+                    value={basic.description} onChange={e => setBasic(b => ({...b, description: e.target.value}))}/>
+                </div>
+                <div className="profile-row">
                   <div className="profile-field">
                     <label className="profile-field__label">Website</label>
-                    <input className="profile-field__input" type="url" placeholder="https://acme.com" value={form.website} onChange={(e) => updateField('website', e.target.value)} id="profile-website" />
+                    <input className="profile-field__input" placeholder="https://yourstartup.com"
+                      value={basic.website} onChange={e => setBasic(b => ({...b, website: e.target.value}))}/>
+                  </div>
+                  <div className="profile-field">
+                    <label className="profile-field__label">Incorporation Proof URL</label>
+                    <input className="profile-field__input" placeholder="Link to incorporation doc"
+                      value={basic.incorporationProofUrl} onChange={e => setBasic(b => ({...b, incorporationProofUrl: e.target.value}))}/>
                   </div>
                 </div>
               </div>
             </>
           )}
 
-          {/* Step 1 for Investor: Investment Preferences */}
-          {currentStep === 1 && role === 'investor' && (
+          {/* ══ Step 2: Team ══ */}
+          {step === 2 && (
             <>
-              <h2 className="profile-form__title">Investment Preferences</h2>
-              <p className="profile-form__subtitle">Help us match you with the right startups.</p>
+              <h2 className="profile-form__title">Team Members</h2>
+              <p className="profile-form__subtitle">Add your core team. LinkedIn profiles boost investor trust and your Profile Score.</p>
               <div className="profile-form">
-                <div className="profile-field">
-                  <label className="profile-field__label">Investment Focus</label>
-                  <input className="profile-field__input" type="text" placeholder="e.g. Clean Energy, SaaS, DeepTech" value={form.investmentFocus} onChange={(e) => updateField('investmentFocus', e.target.value)} id="profile-focus" />
-                </div>
-                <div className="profile-field">
-                  <label className="profile-field__label">Organization</label>
-                  <input className="profile-field__input" type="text" placeholder="Your firm or fund name" value={form.organization} onChange={(e) => updateField('organization', e.target.value)} id="profile-org" />
-                </div>
-                <div className="profile-row">
-                  <div className="profile-field">
-                    <label className="profile-field__label">Min Ticket ($)</label>
-                    <input className="profile-field__input" type="number" placeholder="50000" value={form.minTicket} onChange={(e) => updateField('minTicket', e.target.value)} id="profile-min-ticket" />
-                  </div>
-                  <div className="profile-field">
-                    <label className="profile-field__label">Max Ticket ($)</label>
-                    <input className="profile-field__input" type="number" placeholder="1000000" value={form.maxTicket} onChange={(e) => updateField('maxTicket', e.target.value)} id="profile-max-ticket" />
-                  </div>
-                </div>
-                <div className="profile-field">
-                  <label className="profile-field__label">Portfolio Size (# of companies)</label>
-                  <input className="profile-field__input" type="number" placeholder="12" value={form.portfolioSize} onChange={(e) => updateField('portfolioSize', e.target.value)} id="profile-portfolio" />
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Step 2 for Startup: Team */}
-          {currentStep === 2 && role === 'startup' && (
-            <>
-              <h2 className="profile-form__title">Team & Documents</h2>
-              <p className="profile-form__subtitle">Add team members and their LinkedIn profiles. Upload verification documents later in Settings.</p>
-              <div className="profile-form">
-                <div className="profile-field">
-                  <label className="profile-field__label">Team Members</label>
-                  <div className="profile-team-list">
-                    {form.teamMembers.map((member, idx) => (
-                      <div key={idx} className="profile-team-member">
-                        <input type="text" placeholder="Name" value={member.name} onChange={(e) => updateTeamMember(idx, 'name', e.target.value)} />
-                        <input type="text" placeholder="Role" value={member.role} onChange={(e) => updateTeamMember(idx, 'role', e.target.value)} />
-                        <input type="url" placeholder="LinkedIn URL" value={member.linkedIn} onChange={(e) => updateTeamMember(idx, 'linkedIn', e.target.value)} />
-                        {form.teamMembers.length > 1 && (
-                          <button className="profile-team-remove" onClick={() => removeTeamMember(idx)} type="button">
-                            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+                <div className="profile-team-list">
+                  {team.map((member, i) => (
+                    <div key={i} style={{border:'1px solid #E0E0E0', borderRadius:'12px', padding:'16px', marginBottom:'8px'}}>
+                      <div className="profile-row" style={{marginBottom:'8px'}}>
+                        <div className="profile-field">
+                          <label className="profile-field__label">Name *</label>
+                          <input className="profile-field__input" placeholder="Full name"
+                            value={member.name} onChange={e => updateTeam(i,'name',e.target.value)}/>
+                        </div>
+                        <div className="profile-field">
+                          <label className="profile-field__label">Role</label>
+                          <input className="profile-field__input" placeholder="e.g. CTO, Co-Founder"
+                            value={member.role} onChange={e => updateTeam(i,'role',e.target.value)}/>
+                        </div>
+                      </div>
+                      <div style={{display:'flex', gap:'10px', alignItems:'flex-end'}}>
+                        <div className="profile-field" style={{flex:1}}>
+                          <label className="profile-field__label">LinkedIn URL</label>
+                          <input className="profile-field__input" placeholder="https://linkedin.com/in/..."
+                            value={member.linkedIn} onChange={e => updateTeam(i,'linkedIn',e.target.value)}/>
+                        </div>
+                        {team.length > 1 && (
+                          <button className="profile-team-remove" onClick={() => removeTeamMember(i)}>
+                            <span className="material-symbols-outlined" style={{fontSize:'16px'}}>close</span>
                           </button>
                         )}
                       </div>
-                    ))}
-                  </div>
-                  <button className="profile-team-add" onClick={addTeamMember} type="button">
-                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>add</span>
+                    </div>
+                  ))}
+                </div>
+                {team.length < 6 && (
+                  <button className="profile-team-add" onClick={addTeamMember}>
+                    <span className="material-symbols-outlined" style={{fontSize:'16px'}}>add</span>
                     Add Team Member
                   </button>
+                )}
+                <div className="alert-banner">
+                  <span className="material-symbols-outlined" style={{fontSize:'18px',color:'#1976D2'}}>info</span>
+                  <span style={{fontSize:'13px',color:'#333'}}>Adding 2+ team members with LinkedIn profiles earns +10 Profile Score points and builds investor confidence.</span>
                 </div>
               </div>
             </>
           )}
 
-          {/* Step 2 for Investor: Verification */}
-          {currentStep === 2 && role === 'investor' && (
+          {/* ══ Step 3: Business Plan ══ */}
+          {step === 3 && (
             <>
-              <h2 className="profile-form__title">Verification</h2>
-              <p className="profile-form__subtitle">Verify your identity to unlock full platform features. You can upload KYC documents later in Settings.</p>
+              <h2 className="profile-form__title">Business Plan & Pitch</h2>
+              <p className="profile-form__subtitle">Paste your pitch or upload a link. Our AI will generate a summary for investors.</p>
               <div className="profile-form">
                 <div className="profile-field">
-                  <label className="profile-field__label">LinkedIn Profile</label>
-                  <input className="profile-field__input" type="url" placeholder="https://linkedin.com/in/..." value={form.linkedIn} onChange={(e) => updateField('linkedIn', e.target.value)} id="profile-verify-linkedin" />
+                  <label className="profile-field__label">Pitch / Business Plan Text</label>
+                  <textarea className="profile-field__textarea" rows={6}
+                    placeholder="Paste your business plan, executive summary, or pitch text here. Our AI will analyze it for investors..."
+                    value={plan.pitchText} onChange={e => setPlan(p => ({...p, pitchText: e.target.value}))}/>
                 </div>
-                <div style={{ padding: '32px', textAlign: 'center', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 14, color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 32, display: 'block', marginBottom: 8, color: 'rgba(14,165,233,0.4)' }}>cloud_upload</span>
-                  KYC document upload will be available in Settings after account creation.
+                <button className="auth-voice-btn" onClick={analyzePitch} disabled={aiLoading || !plan.pitchText.trim()}>
+                  {aiLoading
+                    ? <><span className="material-symbols-outlined" style={{fontSize:'18px',animation:'spin 1s linear infinite'}}>refresh</span> Analyzing...</>
+                    : <><span className="material-symbols-outlined" style={{fontSize:'18px'}}>smart_toy</span> Analyze with AI</>}
+                </button>
+
+                {aiAnalysis && (
+                  <div style={{background:'#F0F7FF', border:'1px solid #BBDEFB', borderRadius:'12px', padding:'16px'}}>
+                    <div style={{fontWeight:700, color:'#1565C0', marginBottom:'8px', fontSize:'14px'}}>AI Analysis Complete</div>
+                    <p style={{fontSize:'13px', color:'#333', lineHeight:1.6, marginBottom:'12px'}}>{aiAnalysis.summary}</p>
+                    {aiAnalysis.keyPoints?.length > 0 && (
+                      <div style={{marginBottom:'8px'}}>
+                        <div style={{fontSize:'11px', fontWeight:700, color:'#555', textTransform:'uppercase', letterSpacing:'1px', marginBottom:'6px'}}>Key Points</div>
+                        {aiAnalysis.keyPoints.map((p, i) => (
+                          <div key={i} style={{display:'flex', gap:'6px', fontSize:'12px', color:'#333', marginBottom:'4px'}}>
+                            <span className="material-symbols-outlined" style={{fontSize:'14px',color:'#4CAF50'}}>check_circle</span>{p}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {aiAnalysis.riskFlags?.length > 0 && (
+                      <div>
+                        <div style={{fontSize:'11px', fontWeight:700, color:'#555', textTransform:'uppercase', letterSpacing:'1px', marginBottom:'6px'}}>Risk Flags</div>
+                        {aiAnalysis.riskFlags.map((r, i) => (
+                          <div key={i} style={{display:'flex', gap:'6px', fontSize:'12px', color:'#D32F2F', marginBottom:'4px'}}>
+                            <span className="material-symbols-outlined" style={{fontSize:'14px',color:'#D32F2F'}}>warning</span>{r}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div style={{display:'flex', gap:'8px', marginTop:'12px', flexWrap:'wrap'}}>
+                      <span style={{background:'#E3F2FD', color:'#1565C0', padding:'4px 10px', borderRadius:'999px', fontSize:'11px', fontWeight:600}}>
+                        Viability: {aiAnalysis.viabilityScore}/100
+                      </span>
+                      <span style={{background:'#E8F5E9', color:'#2E7D32', padding:'4px 10px', borderRadius:'999px', fontSize:'11px', fontWeight:600}}>
+                        {aiAnalysis.recommendedCategory}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="profile-row">
+                  <div className="profile-field">
+                    <label className="profile-field__label">Business Plan URL</label>
+                    <input className="profile-field__input" placeholder="Google Drive / Notion link"
+                      value={plan.businessPlanUrl} onChange={e => setPlan(p => ({...p, businessPlanUrl: e.target.value}))}/>
+                  </div>
+                  <div className="profile-field">
+                    <label className="profile-field__label">Pitch Deck URL</label>
+                    <input className="profile-field__input" placeholder="Slides link"
+                      value={plan.pitchDeckUrl} onChange={e => setPlan(p => ({...p, pitchDeckUrl: e.target.value}))}/>
+                  </div>
                 </div>
               </div>
             </>
           )}
 
-          {/* Navigation */}
+          {/* ══ Step 4: Fund Allocation ══ */}
+          {step === 4 && (
+            <>
+              <h2 className="profile-form__title">Funding & Allocation Plan</h2>
+              <p className="profile-form__subtitle">Set your funding goal and how you plan to allocate it. Total must equal 100%.</p>
+              <div className="profile-form">
+                <div className="profile-row">
+                  <div className="profile-field">
+                    <label className="profile-field__label">Funding Target (USD) *</label>
+                    <input className="profile-field__input" type="number" placeholder="e.g. 500000"
+                      value={funds.fundingTarget} onChange={e => setFunds(f => ({...f, fundingTarget: e.target.value}))}/>
+                  </div>
+                  <div className="profile-field">
+                    <label className="profile-field__label">Timeline</label>
+                    <select className="profile-field__select" value={funds.fundingTimeline}
+                      onChange={e => setFunds(f => ({...f, fundingTimeline: e.target.value}))}>
+                      {TIMELINES.map(t => <option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{background:'#F5F7FA', borderRadius:'12px', padding:'16px'}}>
+                  <div style={{fontWeight:700, fontSize:'13px', color:'#333', marginBottom:'12px'}}>
+                    Budget Allocation — Total: <span style={{color: totalFundPct === 100 ? '#2E7D32' : '#D32F2F'}}>{totalFundPct}%</span>
+                    {totalFundPct === 100 && <span className="material-symbols-outlined" style={{fontSize:'16px',color:'#4CAF50',marginLeft:'6px',verticalAlign:'middle'}}>check_circle</span>}
+                  </div>
+                  {[
+                    { key:'tech', label:'Technology', color:'#1976D2' },
+                    { key:'marketing', label:'Marketing', color:'#7B1FA2' },
+                    { key:'operations', label:'Operations', color:'#E65100' },
+                    { key:'legal', label:'Legal & Compliance', color:'#2E7D32' },
+                  ].map(({ key, label, color }) => (
+                    <div key={key} style={{marginBottom:'16px'}}>
+                      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'6px'}}>
+                        <label style={{fontSize:'12px', fontWeight:600, color:'#555'}}>{label}</label>
+                        <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                          <input type="number" min="0" max="100"
+                            style={{width:'60px', padding:'4px 8px', border:'1px solid #E0E0E0', borderRadius:'6px', fontSize:'13px', textAlign:'center'}}
+                            value={funds[key]} onChange={e => setFunds(f => ({...f, [key]: Number(e.target.value)}))}/>
+                          <span style={{fontSize:'12px', color:'#757575'}}>%</span>
+                        </div>
+                      </div>
+                      <div style={{background:'#E0E0E0', borderRadius:'999px', height:'6px', overflow:'hidden'}}>
+                        <div style={{width:`${Math.min(funds[key],100)}%`, height:'100%', background:color, borderRadius:'999px', transition:'width 0.3s ease'}}/>
+                      </div>
+                    </div>
+                  ))}
+                  {totalFundPct !== 100 && (
+                    <div style={{display:'flex', gap:'6px', alignItems:'center', color:'#D32F2F', fontSize:'12px'}}>
+                      <span className="material-symbols-outlined" style={{fontSize:'14px'}}>warning</span>
+                      Percentages must add up to exactly 100%
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ══ Step 5: Milestones ══ */}
+          {step === 5 && (
+            <>
+              <h2 className="profile-form__title">Funding Milestones</h2>
+              <p className="profile-form__subtitle">Define 3–5 milestones. Each has a fund tranche % that releases when investors approve it.</p>
+              <div className="profile-form">
+                {milestones.map((m, i) => (
+                  <div key={i} style={{border:'1px solid #E0E0E0', borderRadius:'12px', padding:'16px', position:'relative'}}>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px'}}>
+                      <span style={{fontWeight:700, fontSize:'13px', color:'#1565C0'}}>Milestone {i + 1}</span>
+                      {milestones.length > 1 && (
+                        <button className="profile-team-remove" onClick={() => removeMilestone(i)}>
+                          <span className="material-symbols-outlined" style={{fontSize:'16px'}}>close</span>
+                        </button>
+                      )}
+                    </div>
+                    <div className="profile-row" style={{marginBottom:'10px'}}>
+                      <div className="profile-field">
+                        <label className="profile-field__label">Title *</label>
+                        <input className="profile-field__input" placeholder="e.g. MVP Launch"
+                          value={m.title} onChange={e => updateMilestone(i,'title',e.target.value)}/>
+                      </div>
+                      <div className="profile-field">
+                        <label className="profile-field__label">Target Date</label>
+                        <input className="profile-field__input" type="date"
+                          value={m.targetDate} onChange={e => updateMilestone(i,'targetDate',e.target.value)}/>
+                      </div>
+                    </div>
+                    <div className="profile-field" style={{marginBottom:'10px'}}>
+                      <label className="profile-field__label">Success Criteria</label>
+                      <input className="profile-field__input" placeholder="e.g. 100 paying customers, $50k MRR"
+                        value={m.successCriteria} onChange={e => updateMilestone(i,'successCriteria',e.target.value)}/>
+                    </div>
+                    <div className="profile-row">
+                      <div className="profile-field">
+                        <label className="profile-field__label">Description</label>
+                        <input className="profile-field__input" placeholder="What will be achieved?"
+                          value={m.description} onChange={e => updateMilestone(i,'description',e.target.value)}/>
+                      </div>
+                      <div className="profile-field">
+                        <label className="profile-field__label">Tranche % of Funding</label>
+                        <input className="profile-field__input" type="number" min="0" max="100"
+                          placeholder="e.g. 25"
+                          value={m.tranchePct} onChange={e => updateMilestone(i,'tranchePct',e.target.value)}/>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                  {milestones.length < 5 && (
+                    <button className="profile-team-add" onClick={addMilestone}>
+                      <span className="material-symbols-outlined" style={{fontSize:'16px'}}>add</span>
+                      Add Milestone ({milestones.length}/5)
+                    </button>
+                  )}
+                  <span style={{fontSize:'12px', color: totalTranchePct === 100 ? '#2E7D32' : '#D32F2F', fontWeight:600, marginLeft:'auto'}}>
+                    Total Tranche: {totalTranchePct}% {totalTranchePct === 100 ? '✓' : '(should equal 100%)'}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ── Navigation ── */}
           <div className="profile-nav">
-            {currentStep > 0 && (
-              <button className="profile-nav__btn profile-nav__btn--back" onClick={() => setCurrentStep(currentStep - 1)}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_back</span>
-                Back
+            {step > 1 && (
+              <button className="profile-nav__btn profile-nav__btn--back" onClick={() => setStep(s => s - 1)}>
+                <span className="material-symbols-outlined" style={{fontSize:'18px'}}>arrow_back</span> Back
               </button>
             )}
-            {currentStep < steps.length - 1 ? (
-              <button className="profile-nav__btn profile-nav__btn--next" onClick={handleNext} disabled={saving}>
-                {saving ? 'Saving...' : 'Next'}
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_forward</span>
+            {step < 5 && (
+              <button className="profile-nav__btn profile-nav__btn--next"
+                onClick={saveStep} disabled={saving || (step === 4 && totalFundPct !== 100)}>
+                {saving ? 'Saving...' : 'Save & Continue'}
+                <span className="material-symbols-outlined" style={{fontSize:'18px'}}>arrow_forward</span>
               </button>
-            ) : (
-              <button className="profile-nav__btn profile-nav__btn--finish" onClick={handleNext} disabled={saving}>
+            )}
+            {step === 5 && (
+              <button className="profile-nav__btn profile-nav__btn--finish" onClick={saveStep} disabled={saving}>
                 {saving ? 'Saving...' : 'Complete Profile'}
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check</span>
+                <span className="material-symbols-outlined" style={{fontSize:'18px'}}>check</span>
               </button>
             )}
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

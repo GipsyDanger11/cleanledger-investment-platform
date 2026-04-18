@@ -32,14 +32,14 @@
 .onboarding__logo-mark {
   width: 36px;
   height: 36px;
-  background: rgba(107, 255, 143, 0.15);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--color-tertiary-fixed);
+  color: #FFFFFF;
 }
 
 /* Step list on brand panel */
@@ -67,25 +67,25 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: rgba(133, 144, 166, 0.15);
+  background: rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   font-size: 0.7rem;
   font-weight: 700;
-  color: #8590A6;
+  color: rgba(255, 255, 255, 0.6);
   transition: background 150ms ease, color 150ms ease;
 }
 
 .onboarding__step-item.active .onboarding__step-icon {
-  background: var(--color-tertiary-fixed);
-  color: var(--color-on-tertiary-fixed);
+  background: #FFFFFF;
+  color: #1565C0;
 }
 
 .onboarding__step-item.done .onboarding__step-icon {
-  background: rgba(107, 255, 143, 0.2);
-  color: var(--color-tertiary-fixed);
+  background: rgba(76, 175, 80, 0.2);
+  color: #A5D6A7;
 }
 
 /* Form Panel */
@@ -161,9 +161,9 @@
 }
 
 .onboarding__upload-zone--done {
-  border-color: var(--color-tertiary-fixed);
+  border-color: #4CAF50;
   border-style: solid;
-  background: rgba(107, 255, 143, 0.06);
+  background: rgba(76, 175, 80, 0.05);
 }
 
 /* Terms */

@@ -1,18 +1,18 @@
-/* ── Bottom Nav Strip ──────────────────────────────────────── */
+/* ── Bottom Nav Strip — White + Blue ───────────────────────── */
 .bottom-nav {
   position: fixed;
   bottom: 0;
   left: var(--sidebar-width);
   right: 0;
   height: 56px;
-  background: var(--color-surface-container-lowest);
-  border-top: 1px solid rgba(197, 198, 205, 0.15);
+  background: #FFFFFF;
+  border-top: 1px solid #E0E0E0;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-8);
   z-index: 90;
-  box-shadow: 0 -4px 24px rgba(9, 20, 38, 0.04);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .bottom-nav__item {
@@ -21,18 +21,18 @@
   align-items: center;
   gap: 2px;
   text-decoration: none;
-  color: var(--color-outline);
+  color: #9E9E9E;
   transition: color 150ms ease;
   padding: var(--space-2) var(--space-4);
   border-radius: var(--border-radius-container);
 }
 
 .bottom-nav__item:hover {
-  color: var(--color-on-surface);
+  color: #111111;
 }
 
 .bottom-nav__item--active {
-  color: var(--color-primary-container);
+  color: #1976D2;
 }
 
 .bottom-nav__icon {

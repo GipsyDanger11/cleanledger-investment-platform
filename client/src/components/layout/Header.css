@@ -1,14 +1,13 @@
-/* ── Public Header ────────────────────────────────────────── */
+/* ── Public Header — Blue Navbar ────────────────────────────── */
 .public-header {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 200;
-  background: rgba(11, 28, 48, 0.80);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--color-primary-container);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .public-header__inner {
@@ -30,14 +29,14 @@
 .public-header__logo-mark {
   width: 32px;
   height: 32px;
-  background: linear-gradient(135deg, var(--color-tertiary-fixed) 0%, #22C55E 100%);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.7rem;
   font-weight: 700;
-  color: var(--color-on-tertiary-fixed);
+  color: #FFFFFF;
   letter-spacing: 0.05em;
 }
 
@@ -58,23 +57,24 @@
 .public-header__link {
   font-size: var(--font-size-label-md);
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.75);
   text-decoration: none;
   transition: color 150ms ease;
 }
 
 .public-header__link:hover {
-  color: rgba(255, 255, 255, 0.95);
+  color: #FFFFFF;
 }
 
 .public-header__cta {
   margin-left: var(--space-4);
-  background: var(--color-tertiary-fixed) !important;
-  color: var(--color-on-tertiary-fixed) !important;
+  background: #FFFFFF !important;
+  color: var(--color-primary-container) !important;
   border: none !important;
+  font-weight: 600 !important;
 }
 
 .public-header__cta:hover {
-  background: #52ff77 !important;
-  box-shadow: 0 0 20px rgba(107, 255, 143, 0.4);
+  background: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
 }
