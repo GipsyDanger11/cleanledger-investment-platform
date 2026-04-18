@@ -50,6 +50,13 @@ exports.invest = catchAsync(async (req, res) => {
     $inc: { totalRaised: investAmount, backers: 1 },
   });
 
+  // 5.5. Instantly transfer virtual funds to the Startup Founder's Wallet
+  if (startup.createdBy) {
+    await User.findByIdAndUpdate(startup.createdBy, {
+      $inc: { walletBalance: investAmount },
+    });
+  }
+
   // 6. Create anonymised investor ID hash (public audit — no PII)
   const investorIdHash = crypto
     .createHash('sha256')
