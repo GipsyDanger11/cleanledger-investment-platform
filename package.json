@@ -1,0 +1,17 @@
+{
+  "name": "cleanledger-investment-platform",
+  "version": "1.0.0",
+  "description": "CleanLedger — Precision-Grade Infrastructure for Private Markets (MERN Stack)",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "dev:client": "npm run dev --prefix client",
+    "dev:server": "npm run dev --prefix server",
+    "install:all": "npm install --prefix client && npm install --prefix server"
+  },
+  "keywords": ["cleanledger", "mern", "fintech", "blockchain"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

@@ -7,33 +7,12 @@
   flex-direction: column;
   gap: var(--space-4);
   cursor: pointer;
-  transition: box-shadow 200ms ease, transform 200ms ease;
-  border: 1px solid rgba(197, 198, 205, 0.12);
-  position: relative;
-  overflow: hidden;
-}
-
-/* bottom accent bar that slides in on hover */
-.startup-card::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--color-tertiary-fixed) 0%, #22C55E 100%);
-  transform: scaleX(0);
-  transition: transform 200ms ease;
-  transform-origin: left;
+  transition: background 150ms ease, transform 150ms ease;
 }
 
 .startup-card:hover {
-  box-shadow: 0 8px 32px rgba(9, 20, 38, 0.1);
+  background: var(--color-surface-container-high);
   transform: translateY(-2px);
-}
-
-.startup-card:hover::after {
-  transform: scaleX(1);
 }
 
 .startup-card:focus-visible {
@@ -48,8 +27,8 @@
 }
 
 .startup-card__avatar {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%);
   border-radius: 8px;
   display: flex;
@@ -59,7 +38,6 @@
   font-weight: 700;
   color: white;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(9, 20, 38, 0.2);
 }
 
 .startup-card__meta {
@@ -69,8 +47,6 @@
 
 .startup-card__name {
   margin: 0;
-  font-size: var(--font-size-body-md);
-  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -79,8 +55,6 @@
 
 .startup-card__sector {
   margin: 2px 0 0;
-  font-size: var(--font-size-label-sm);
-  color: var(--color-on-surface-variant);
 }
 
 .startup-card__badge {
@@ -90,9 +64,6 @@
 
 .startup-card__desc {
   margin: 0;
-  font-size: var(--font-size-body-sm);
-  color: var(--color-on-surface-variant);
-  line-height: 1.6;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -100,28 +71,17 @@
 }
 
 .startup-card__funding {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.startup-card__funding-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  /* funding section styles */
 }
 
 .startup-card__footer {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding-top: var(--space-2);
-  border-top: 1px solid rgba(197, 198, 205, 0.1);
 }
 
 .startup-card__esg {
   margin-left: auto;
-  font-size: var(--font-size-label-sm);
   color: var(--color-on-tertiary-container);
   font-weight: 600;
 }
@@ -130,14 +90,4 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-top: var(--space-1);
-}
-
-.startup-card__tag {
-  font-size: 0.6rem;
-  padding: 2px var(--space-2);
-  background: var(--color-surface-container-low);
-  border-radius: var(--border-radius-chip);
-  color: var(--color-on-surface-variant);
-  font-weight: 500;
 }

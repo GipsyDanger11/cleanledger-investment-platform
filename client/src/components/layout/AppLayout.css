@@ -11,12 +11,13 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding-bottom: 64px; /* bottom nav height */
+  padding-bottom: 56px;
+  /* bottom nav height */
 }
 
 .app-layout__content {
   flex: 1;
-  padding: var(--space-8) var(--space-8) var(--space-8);
+  padding: var(--space-8);
   max-width: 1400px;
   width: 100%;
 }
