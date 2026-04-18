@@ -1,0 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ═══════════ INVESTOR DASHBOARD ═══════════ */
+.investor-dash {
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #271204 0%, #17110e 60%, #3d1b04 100%);
+  color: #e2e8f0;
+  padding: 2rem;
+}
+
+.investor-dash__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+}
+.investor-dash__title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+}
+.investor-dash__badge {
+  background: rgba(245,158,11,0.18);
+  border: 1px solid rgba(245,158,11,0.4);
+  color: #fcd34d;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Marketplace grid */
+.startup-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.startup-item {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(245,158,11,0.18);
+  border-radius: 16px;
+  padding: 1.5rem;
+  backdrop-filter: blur(12px);
+  transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+  display: flex;
+  flex-direction: column;
+}
+.startup-item:hover {
+  transform: translateY(-4px);
+  border-color: rgba(245,158,11,0.5);
+  box-shadow: 0 12px 40px rgba(245,158,11,0.12);
+}
+.startup-item h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  color: #fcd34d;
+  font-weight: 700;
+}
+.startup-item p {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: #cbd5e1;
+  line-height: 1.5;
+  flex: 1;
+}
+
+/* Tags/Meta */
+.startup-item__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+.startup-sector {
+  font-size: 0.75rem;
+  background: rgba(245,158,11,0.15);
+  color: #fbbf24;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.startup-trust {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.startup-trust::before {
+  content: '★';
+  color: #f59e0b;
+}
+
+/* Loading / error */
+.investor-dash--loading, .investor-dash--error {
+  display: flex; align-items: center; justify-content: center;
+  height: 60vh; font-size: 1.1rem; color: #64748b;
+}
+.investor-dash--error { color: #f87171; }

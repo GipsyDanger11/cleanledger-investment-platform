@@ -1,0 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ═══════════ ADMIN DASHBOARD ═══════════ */
+.admin-dash {
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0f1e 0%, #111827 60%, #0d1635 100%);
+  color: #e2e8f0;
+  padding: 2rem;
+}
+
+/* Header */
+.admin-dash__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+}
+.admin-dash__title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  background: linear-gradient(90deg, #818cf8, #6366f1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+}
+.admin-dash__badge {
+  background: rgba(99,102,241,0.18);
+  border: 1px solid rgba(99,102,241,0.4);
+  color: #818cf8;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Stat cards grid */
+.admin-dash__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2.5rem;
+}
+.admin-stat-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(99,102,241,0.18);
+  border-radius: 16px;
+  padding: 1.5rem;
+  backdrop-filter: blur(12px);
+  transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+  cursor: default;
+}
+.admin-stat-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(99,102,241,0.5);
+  box-shadow: 0 12px 40px rgba(99,102,241,0.12);
+}
+.admin-stat-card__icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.admin-stat-card__value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #c7d2fe;
+  line-height: 1;
+  margin-bottom: 0.35rem;
+}
+.admin-stat-card__label {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Section heading */
+.admin-dash__section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #818cf8;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+}
+
+/* User table */
+.admin-table-wrap {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(99,102,241,0.15);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.admin-table th {
+  background: rgba(99,102,241,0.12);
+  color: #818cf8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.85rem 1.25rem;
+  text-align: left;
+}
+.admin-table td {
+  padding: 0.85rem 1.25rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  color: #cbd5e1;
+}
+.admin-table tr:last-child td { border-bottom: none; }
+.admin-table tr:hover td {
+  background: rgba(99,102,241,0.06);
+}
+
+/* Role pill */
+.role-pill {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.role-pill--admin    { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+.role-pill--founder  { background: rgba(20,184,166,0.15); color: #5eead4; border: 1px solid rgba(20,184,166,0.3); }
+.role-pill--investor { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+
+/* Loading / error */
+.admin-dash--loading,
+.admin-dash--error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  font-size: 1.1rem;
+  color: #64748b;
+}
+.admin-dash--error { color: #f87171; }
