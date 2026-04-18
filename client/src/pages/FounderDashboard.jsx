@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import apiClient from '../utils/apiClient';
 import './founder.css';
 
@@ -44,7 +45,12 @@ const FounderDashboard = () => {
           <h1 className="founder-dash__title">Founder Dashboard</h1>
           <p className="founder-dash__sub">{startup.name} · {startup.sector}</p>
         </div>
-        <span className="founder-dash__badge">Startup View</span>
+        <div style={{display:'flex', gap:'12px', alignItems:'center'}}>
+          <Link to="/edit-profile" className="btn btn-secondary" style={{display:'flex', alignItems:'center', gap:'4px'}}>
+            <span className="material-symbols-outlined" style={{fontSize:'18px'}}>edit</span> Edit Profile
+          </Link>
+          <span className="founder-dash__badge">Startup View</span>
+        </div>
       </div>
 
       <div className="founder-dash__stats">

@@ -7,6 +7,7 @@ const {
   sanitizeMilestonesForStartup,
 } = require('../utils/registrationMappers');
 const { analyzePitchText } = require('../services/pitchMistral');
+const { analyzeRedFlags } = require('../services/redFlagMistral');
 
 const STARTUP_WRITE_FIELDS = [
   'name',
@@ -397,4 +398,37 @@ exports.analyzePitch = catchAsync(async (req, res) => {
   } catch (err) {
     return apiError(res, 500, 'AI Analysis failed: ' + err.message);
   }
+});
+
+// ── R4: AI Red Flag Analysis ────────────────────────────────
+exports.analyzeRedFlags = catchAsync(async (req, res) => {
+  const startup = await Startup.findOne({ _id: req.params.id, createdBy: req.user._id }).lean();
+  if (!startup) return apiError(res, 404, 'Startup not found or unauthorized');
+
+  const founder = await FounderProfile.findOne({ user: req.user._id }).lean();
+
+  const profileData = {
+    name: startup.name,
+    category: startup.category,
+    sector: startup.sector,
+    description: startup.description,
+    teamSize: startup.teamSize,
+    teamMembers: startup.teamMembers?.map(m => ({ name: m.name, role: m.role, hasLinkedIn: !!m.linkedIn })),
+    fundingTarget: startup.fundingTarget,
+    fundAllocation: startup.fundAllocation,
+    milestones: startup.milestones?.map(m => ({ title: m.title, tranchePct: m.tranchePct })),
+    aiSummary: startup.aiAnalysis?.summary || '',
+    founderTitle: founder?.founderTitle,
+    founderMission: founder?.founderMissionStatement,
+    leadershipYears: founder?.leadershipExperienceYears
+  };
+
+  const redFlags = await analyzeRedFlags(profileData);
+
+  // Update original document
+  const startupDoc = await Startup.findById(startup._id);
+  startupDoc.redFlags = redFlags;
+  await startupDoc.save();
+
+  res.json({ success: true, data: redFlags });
 });

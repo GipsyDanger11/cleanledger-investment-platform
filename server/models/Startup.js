@@ -151,7 +151,8 @@ const startupSchema = new mongoose.Schema(
       strengths: [String],
       weaknesses: [String],
       score: { type: Number, min: 0, max: 100 }
-    }
+    },
+    redFlags: [String]
   },
   { timestamps: true }
 );

@@ -30,25 +30,6 @@ export default function StartupDetails() {
   const [fheResult, setFheResult] = useState(null);
   const [fheLoading, setFheLoading] = useState(false);
 
-  // ── AI Analysis State ───────────────────────────────────────
-  const [pitchText, setPitchText] = useState('');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-  const handleAnalyzePitch = async () => {
-    if (!pitchText.trim()) return alert('Please enter pitch text.');
-    setIsAnalyzing(true);
-    try {
-      const res = await analyzePitch(id, pitchText);
-      // Update local state directly to show result
-      setDetail(prev => ({ ...prev, startup: { ...prev.startup, aiAnalysis: res } }));
-      setPitchText('');
-    } catch (e) {
-      alert('Analysis failed: ' + e.message);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
   const handleFHE = async () => {
     setFheLoading(true);
     try {
@@ -203,6 +184,21 @@ export default function StartupDetails() {
         {/* Left Column */}
         <div className="startup-details__left">
 
+          {/* AI Red Flags Warning Badges (Investor Only) */}
+          {user?.role === 'investor' && startup.redFlags && startup.redFlags.length > 0 && (
+            <div className="alert-banner alert-banner--warn" style={{ marginBottom: 'var(--space-4)', display: 'block', borderLeft: '4px solid #EF4444', backgroundColor: '#FEF2F2' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: 'var(--space-3)' }}>
+                <span className="material-symbols-outlined" style={{ color: '#EF4444', fontSize: '24px' }}>warning</span>
+                <h3 className="text-title" style={{ margin: 0, color: '#B91C1C' }}>Automatic AI Red Flags</h3>
+              </div>
+              <ul style={{ paddingLeft: '24px', margin: 0, color: '#991B1B', fontWeight: 500, fontSize: '0.9rem', lineHeight: '1.5' }}>
+                {startup.redFlags.map((flag, idx) => (
+                  <li key={idx} style={{ marginBottom: '6px' }}>{flag}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* DAO Alert */}
           {hasDAORequired && (
             <div className="alert-banner alert-banner--warn">
@@ -252,32 +248,6 @@ export default function StartupDetails() {
                   </ul>
                 </div>
               </div>
-            </div>
-          ) : user?.role === 'startup' && startup.createdBy === user._id ? (
-            <div className="card">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--space-3)' }}>
-                <span className="material-symbols-outlined" style={{ color: '#F59E0B', fontSize: '20px' }}>smart_toy</span>
-                <h2 className="text-title" style={{ margin: 0 }}>Generate AI Pitch Analysis</h2>
-              </div>
-              <p className="text-body-sm text-secondary" style={{ marginBottom: 'var(--space-3)' }}>
-                Paste your business plan or pitch transcript here. Mistral JARVIS will analyze it and display an executive structured breakdown on your profile for investors.
-              </p>
-              <textarea 
-                className="input" 
-                rows="4" 
-                placeholder="Paste pitch text here..." 
-                value={pitchText} 
-                onChange={(e) => setPitchText(e.target.value)}
-                style={{ width: '100%', marginBottom: 'var(--space-3)', resize: 'vertical' }}
-              />
-              <button 
-                className="btn btn-secondary" 
-                onClick={handleAnalyzePitch} 
-                disabled={isAnalyzing}
-                style={{ width: '100%', justifyContent: 'center' }}
-              >
-                {isAnalyzing ? 'Analyzing with Mistral...' : 'Generate Analysis'}
-              </button>
             </div>
           ) : null}
 
