@@ -4,14 +4,30 @@
   min-height: 100vh;
 }
 
-/* HERO */
+/* HERO — dark, immersive, full-viewport */
 .landing__hero {
   min-height: 100vh;
   display: flex;
   align-items: center;
   padding-top: 80px;
-  background: radial-gradient(ellipse 80% 60% at 70% 50%, rgba(30,41,59,0.06) 0%, transparent 70%),
-              var(--color-background);
+  background:
+    radial-gradient(ellipse 60% 80% at 110% 40%, rgba(107,255,143,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 60% at -10% 60%, rgba(30,41,59,0.12) 0%, transparent 60%),
+    linear-gradient(180deg, #0B1C30 0%, #0F2540 35%, #0B1C30 70%, var(--color-background) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* subtle grid overlay */
+.landing__hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(107,255,143,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(107,255,143,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
 }
 
 .landing__hero-inner {
@@ -23,23 +39,28 @@
   gap: var(--space-16);
   align-items: center;
   width: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .landing__hero-title {
-  color: var(--color-on-surface);
+  color: #FFFFFF;
   margin-bottom: var(--space-6);
   line-height: 1.1;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
 }
 
 .landing__hero-accent {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 50%, var(--color-tertiary-fixed) 100%);
+  background: linear-gradient(135deg, #A8C7FA 0%, var(--color-tertiary-fixed) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .landing__hero-sub {
-  color: var(--color-on-surface-variant);
+  color: rgba(255,255,255,0.65);
   max-width: 52ch;
   margin-bottom: var(--space-8);
   line-height: 1.7;
@@ -54,11 +75,40 @@
 .landing__cta-primary {
   padding: var(--space-3) var(--space-6);
   font-size: var(--font-size-body-md);
+  background: var(--color-tertiary-fixed);
+  color: var(--color-on-tertiary-fixed);
+}
+
+.landing__cta-primary:hover {
+  background: #52ff77;
+  box-shadow: 0 0 24px rgba(107,255,143,0.4);
+}
+
+.landing__cta-secondary {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.85);
+}
+
+.landing__cta-secondary:hover {
+  background: rgba(255,255,255,0.14);
+  border-color: rgba(255,255,255,0.25);
 }
 
 /* Ledger Card */
 .landing__hero-visual {
   perspective: 1000px;
+  position: relative;
+}
+
+/* Green glow behind the card */
+.landing__hero-visual::before {
+  content: '';
+  position: absolute;
+  inset: -20px;
+  background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(107,255,143,0.15) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .ledger-card {
@@ -66,6 +116,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  position: relative;
+  z-index: 1;
+  background: rgba(15, 37, 64, 0.85);
+  border: 1px solid rgba(107, 255, 143, 0.15);
+  box-shadow: 0 0 60px rgba(107,255,143,0.08), 0 20px 60px rgba(9,20,38,0.4);
 }
 
 .ledger-card__header {
@@ -93,22 +148,23 @@
   justify-content: space-between;
   align-items: flex-start;
   padding: var(--space-3) var(--space-4);
-  background: var(--color-surface-container-low);
+  background: rgba(255,255,255,0.05);
   border-radius: var(--border-radius-container);
+  border: 1px solid rgba(255,255,255,0.06);
   transition: background 150ms ease;
 }
 
 .ledger-card__entry:hover {
-  background: var(--color-surface-container-high);
+  background: rgba(255,255,255,0.09);
 }
 
 .ledger-card__hash {
-  color: var(--color-outline);
+  color: rgba(107,255,143,0.5);
   font-family: 'Courier New', monospace;
   font-size: 0.65rem;
   letter-spacing: 0.04em;
   padding-top: var(--space-3);
-  border-top: 1px solid rgba(197,198,205,0.12);
+  border-top: 1px solid rgba(107,255,143,0.1);
 }
 
 /* LIVE TICKER */

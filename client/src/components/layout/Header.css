@@ -5,10 +5,10 @@
   left: 0;
   right: 0;
   z-index: 200;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border-bottom: var(--glass-border);
+  background: rgba(11, 28, 48, 0.80);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .public-header__inner {
@@ -30,21 +30,21 @@
 .public-header__logo-mark {
   width: 32px;
   height: 32px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%);
+  background: linear-gradient(135deg, var(--color-tertiary-fixed) 0%, #22C55E 100%);
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.7rem;
   font-weight: 700;
-  color: white;
+  color: var(--color-on-tertiary-fixed);
   letter-spacing: 0.05em;
 }
 
 .public-header__brand {
   font-size: var(--font-size-body-md);
   font-weight: 600;
-  color: var(--color-on-surface);
+  color: #FFFFFF;
   letter-spacing: -0.01em;
 }
 
@@ -58,15 +58,23 @@
 .public-header__link {
   font-size: var(--font-size-label-md);
   font-weight: 500;
-  color: var(--color-on-surface-variant);
+  color: rgba(255, 255, 255, 0.6);
   text-decoration: none;
   transition: color 150ms ease;
 }
 
 .public-header__link:hover {
-  color: var(--color-on-surface);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .public-header__cta {
   margin-left: var(--space-4);
+  background: var(--color-tertiary-fixed) !important;
+  color: var(--color-on-tertiary-fixed) !important;
+  border: none !important;
+}
+
+.public-header__cta:hover {
+  background: #52ff77 !important;
+  box-shadow: 0 0 20px rgba(107, 255, 143, 0.4);
 }

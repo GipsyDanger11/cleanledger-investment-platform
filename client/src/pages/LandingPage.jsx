@@ -65,11 +65,11 @@ export default function LandingPage() {
               A digital ledger engineered like a premium timepiece — every capital event cryptographically recorded, every startup KYB-verified, every tranche DAO-governed.
             </p>
             <div className="landing__hero-ctas">
-              <Link to="/onboarding" className="btn btn-primary landing__cta-primary">
+              <Link to="/onboarding" className="btn landing__cta-primary">
                 Get Started
                 <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_forward</span>
               </Link>
-              <a href="#architecture" className="btn btn-secondary">
+              <a href="#architecture" className="btn btn-secondary landing__cta-secondary">
                 Explore Platform
               </a>
             </div>
@@ -87,12 +87,12 @@ export default function LandingPage() {
                 {LEDGER_EVENTS.slice(0, 4).map((evt, i) => (
                   <div key={i} className="ledger-card__entry">
                     <div>
-                      <div className="text-label-md" style={{ color: 'var(--color-on-surface)' }}>{evt.type}</div>
-                      <div className="text-label-sm text-meta">{evt.entity}</div>
+                      <div className="text-label-md" style={{ color: 'rgba(255,255,255,0.9)' }}>{evt.type}</div>
+                      <div className="text-label-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>{evt.entity}</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div className="text-label-md tabular" style={{ color: 'var(--color-on-surface)', fontWeight: 600 }}>{evt.amount}</div>
-                      <div className="text-label-sm text-meta">{evt.time}</div>
+                      <div className="text-label-md tabular" style={{ color: 'var(--color-tertiary-fixed)', fontWeight: 600 }}>{evt.amount}</div>
+                      <div className="text-label-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>{evt.time}</div>
                     </div>
                   </div>
                 ))}
