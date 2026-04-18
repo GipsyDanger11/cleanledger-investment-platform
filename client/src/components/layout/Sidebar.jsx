@@ -26,7 +26,7 @@ const FOUNDER_NAV = [
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const isFounder = user?.role === 'founder';
+  const isFounder = user?.role === 'startup';
 
   const NAV_ITEMS = isFounder ? FOUNDER_NAV : INVESTOR_NAV;
 

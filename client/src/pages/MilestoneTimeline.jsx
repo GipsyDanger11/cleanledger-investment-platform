@@ -1,16 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useInvestment } from '../context/InvestmentContext';
 import { useAuth } from '../context/AuthContext';
 import './MilestoneTimeline.css';
-
-const STARTUP_OPTIONS = [
-  { id: 'startup_001', name: 'Aura Wind Energy' },
-  { id: 'startup_002', name: 'Solaris Grid Systems' },
-  { id: 'startup_003', name: 'HydroClear Technologies' },
-  { id: 'startup_004', name: 'Verdant Carbon Labs' },
-  { id: 'startup_005', name: 'ThermaVault Energy' },
-  { id: 'startup_006', name: 'AquaTrace Monitoring' },
-];
 
 const STATUS_META = {
   pending:     { label: 'Pending',     color: '#6B7280', bg: '#F3F4F6', icon: 'schedule' },
@@ -77,15 +68,25 @@ function TrustBreakdown({ startup }) {
 
 export default function MilestoneTimeline() {
   const { user } = useAuth();
-  const { startups, castVote } = useInvestment();
-  const [selectedStartupId, setSelectedStartupId] = useState('startup_001');
+  const { startups, fetchStartups, castVote, submitMilestoneProof } = useInvestment();
+  const [selectedStartupId, setSelectedStartupId] = useState('');
   const [proofForm, setProofForm]   = useState({ proofUrl: '', proofNote: '' });
   const [activeModal, setActiveModal] = useState(null);
   const [submitting, setSubmitting]  = useState(false);
   const [msg, setMsg]                = useState('');
   const [showBreakdown, setShowBreakdown] = useState(false);
 
-  const startup = startups.find(s => s.id === selectedStartupId) || startups[0];
+  useEffect(() => {
+    fetchStartups();
+  }, [fetchStartups]);
+
+  useEffect(() => {
+    if (!selectedStartupId && startups.length > 0) {
+      setSelectedStartupId(startups[0]._id);
+    }
+  }, [selectedStartupId, startups]);
+
+  const startup = startups.find(s => s._id === selectedStartupId) || startups[0];
   const milestones = startup?.milestones || [];
   const completedCount = milestones.filter(m => ['verified','released'].includes(m.status)).length;
   const overallPct = milestones.length > 0 ? (completedCount / milestones.length) * 100 : 0;
@@ -96,21 +97,30 @@ export default function MilestoneTimeline() {
   const riskLevel = startup?.riskLevel || 'MEDIUM';
   const riskColor = R4_SCORE_COLORS[riskLevel];
 
-  const handleVoteAction = (milestoneId, approved) => {
+  const handleVoteAction = async (milestoneId, approved) => {
     setSubmitting(true);
-    castVote(selectedStartupId, milestoneId, user?.id || 'inv_001', approved);
-    setMsg(`Vote cast — ${approved ? '✓ Approved' : '✗ Rejected'}`);
-    setTimeout(() => setMsg(''), 3000);
-    setSubmitting(false);
+    try {
+      await castVote(selectedStartupId, milestoneId, approved);
+      await fetchStartups();
+      setMsg(`Vote cast — ${approved ? '✓ Approved' : '✗ Rejected'}`);
+      setTimeout(() => setMsg(''), 3000);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleSubmitProof = (mid) => {
+  const handleSubmitProof = async (mid) => {
     setSubmitting(true);
-    setMsg('Proof submitted! Investors have 48 hours to vote.');
-    setActiveModal(null);
-    setProofForm({ proofUrl: '', proofNote: '' });
-    setTimeout(() => setMsg(''), 3000);
-    setSubmitting(false);
+    try {
+      await submitMilestoneProof(selectedStartupId, mid, proofForm.proofUrl, proofForm.proofNote);
+      await fetchStartups();
+      setMsg('Proof submitted! Investors have 48 hours to vote.');
+      setActiveModal(null);
+      setProofForm({ proofUrl: '', proofNote: '' });
+      setTimeout(() => setMsg(''), 3000);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -129,8 +139,8 @@ export default function MilestoneTimeline() {
               value={selectedStartupId}
               onChange={e => setSelectedStartupId(e.target.value)}
             >
-              {STARTUP_OPTIONS.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
+              {startups.map(s => (
+                <option key={s._id} value={s._id}>{s.name}</option>
               ))}
             </select>
           </label>
@@ -222,7 +232,7 @@ export default function MilestoneTimeline() {
           const countdown = m.status === 'submitted' ? getCountdown(m.voteDeadline) : null;
 
           return (
-            <div key={m.id || i} className={`mt-item ${m.redFlagged ? 'mt-item--flagged' : ''}`}>
+            <div key={m._id || i} className={`mt-item ${m.redFlagged ? 'mt-item--flagged' : ''}`}>
               {/* Connector */}
               <div className="mt-connector">
                 <div className="mt-connector__dot" style={{ background: meta.color, boxShadow: `0 0 0 4px ${meta.bg}` }}>
@@ -238,7 +248,7 @@ export default function MilestoneTimeline() {
                 <div className="mt-card__top">
                   <div className="mt-card__info">
                     <div className="mt-card__badge-row">
-                      <span className="mt-ms-num">MILESTONE {m.phase}</span>
+                      <span className="mt-ms-num">MILESTONE {i + 1}</span>
                       <span className="mt-badge" style={{ background: meta.bg, color: meta.color }}>
                         {meta.label}
                       </span>
@@ -265,24 +275,24 @@ export default function MilestoneTimeline() {
                   {/* Actions */}
                   <div className="mt-card__actions">
                     {/* Submit Proof button (founder) */}
-                    {user?.role === 'founder' && ['pending','in_progress'].includes(m.status) && (
+                    {user?.role === 'startup' && ['pending','in_progress'].includes(m.status) && (
                       <button className="mt-btn mt-btn--primary"
-                        onClick={() => { setActiveModal({ type: 'submit', mid: m.id }); setMsg(''); }}>
+                        onClick={() => { setActiveModal({ type: 'submit', mid: m._id }); setMsg(''); }}>
                         <span className="material-symbols-outlined" style={{ fontSize: 16 }}>upload</span>
                         Submit Proof
                       </button>
                     )}
 
                     {/* Vote panel (investors, submitted milestones) */}
-                    {user?.role !== 'founder' && m.status === 'submitted' && (
+                    {user?.role === 'investor' && m.status === 'submitted' && (
                       <div className="mt-vote-panel">
                         {countdown && <div className="mt-vote-timer">{countdown}</div>}
                         <div style={{ display: 'flex', gap: 8 }}>
-                          <button className="mt-btn mt-btn--approve" onClick={() => handleVoteAction(m.id, true)} disabled={submitting}>
+                          <button className="mt-btn mt-btn--approve" onClick={() => handleVoteAction(m._id, true)} disabled={submitting}>
                             <span className="material-symbols-outlined" style={{ fontSize: 14 }}>thumb_up</span>
                             Approve
                           </button>
-                          <button className="mt-btn mt-btn--reject" onClick={() => handleVoteAction(m.id, false)} disabled={submitting}>
+                          <button className="mt-btn mt-btn--reject" onClick={() => handleVoteAction(m._id, false)} disabled={submitting}>
                             <span className="material-symbols-outlined" style={{ fontSize: 14 }}>thumb_down</span>
                             Reject
                           </button>

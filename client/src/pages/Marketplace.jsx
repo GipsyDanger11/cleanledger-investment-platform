@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import StartupCard from '../components/ui/StartupCard';
 import { useInvestment } from '../context/InvestmentContext';
 import './Marketplace.css';
@@ -8,11 +8,13 @@ const RISK_PROFILES = ['All Risk', 'Low Risk (80+)', 'Medium Risk (65–79)', 'H
 const ESG_FILTERS = ['All ESG', 'ESG 90+', 'ESG 80+', 'ESG 70+'];
 
 export default function Marketplace() {
-  const { startups } = useInvestment();
+  const { startups, fetchStartups, loading } = useInvestment();
   const [sector, setSector] = useState('All');
   const [risk, setRisk] = useState('All Risk');
   const [esg, setEsg] = useState('All ESG');
   const [search, setSearch] = useState('');
+
+  useEffect(() => { fetchStartups(); }, []);
 
   const filtered = startups.filter((s) => {
     const sectorOk = sector === 'All' || s.sector === sector;
@@ -120,8 +122,10 @@ export default function Marketplace() {
           className="marketplace__grid card-section"
           aria-label="Startup registry"
         >
-          {filtered.map((startup) => (
-            <StartupCard key={startup.id} startup={startup} />
+          {loading && startups.length === 0 ? (
+            <p style={{ textAlign: 'center', padding: '40px', color: '#9CA3AF' }}>Loading startups…</p>
+          ) : filtered.map((startup) => (
+            <StartupCard key={startup._id || startup.id} startup={startup} />
           ))}
         </section>
       ) : (

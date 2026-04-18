@@ -10,10 +10,10 @@ export default function StartupCard({ startup }) {
   return (
     <article
       className="startup-card"
-      onClick={() => navigate(`/marketplace/${startup.id}`)}
+      onClick={() => navigate(`/marketplace/${startup._id}`)}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && navigate(`/marketplace/${startup.id}`)}
+      onKeyDown={(e) => e.key === 'Enter' && navigate(`/marketplace/${startup._id}`)}
       aria-label={`View details for ${startup.name}`}
     >
       {/* Header */}

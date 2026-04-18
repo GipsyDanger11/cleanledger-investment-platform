@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useInvestment } from '../context/InvestmentContext';
 import { useAuth } from '../context/AuthContext';
@@ -33,21 +33,25 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const {
-    investments, startups,
-    investorNotifications, founderNotifications,
+    investments, startups, notifications,
     portfolioValue, avgTrustScore, tranchesReleased,
+    dashboardData, fetchDashboard, fetchInvestments, loading,
+    markNotificationRead, markAllNotificationsRead, unreadCount,
   } = useInvestment();
 
-  const isFounder = user?.role === 'founder';
-  const notifications = isFounder ? founderNotifications : investorNotifications;
-  const [readSet, setReadSet] = useState(new Set());
+  const isFounder = user?.role === 'startup';
 
-  // Founder uses startup_001 as their own startup (Aura Wind Energy)
-  const myStartup = isFounder ? startups.find(s => s.id === 'startup_001') : null;
+  // Founder's startup comes from dashboardData (API response)
+  const myStartup = isFounder
+    ? (dashboardData?.startup || null)
+    : null;
 
-  const unreadCount = notifications.filter(n => !n.read && !readSet.has(n.id)).length;
+  const markRead = (id) => markNotificationRead(id);
 
-  const markRead = (id) => setReadSet(prev => new Set([...prev, id]));
+  useEffect(() => {
+    fetchDashboard();
+    if (!isFounder) fetchInvestments();
+  }, []);
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -56,7 +60,7 @@ export default function Dashboard() {
     return 'Good evening';
   };
 
-  // Milestones with pending votes
+  // Milestones with pending votes (for investor)
   const votableStartups = startups.filter(s =>
     (s.milestones || []).some(m => m.status === 'submitted')
   );
@@ -146,7 +150,6 @@ export default function Dashboard() {
               </button>
             </div>
           )}
-
           <div className="d2-body">
             {/* Active Investments */}
             <section className="d2-card d2-investments">
@@ -168,13 +171,14 @@ export default function Dashboard() {
                   </thead>
                   <tbody>
                     {investments.map(inv => {
-                      const startup = startups.find(s => s.id === inv.startupId);
+                      const startupId = inv.startup?._id || inv.startup;
+                      const startup = startups.find(s => s._id === startupId);
                       const riskL = startup?.riskLevel || 'MEDIUM';
                       return (
                         <tr
-                          key={inv.id}
+                          key={inv._id}
                           className="d2-table__row"
-                          onClick={() => navigate(`/marketplace/${inv.startupId}`)}
+                          onClick={() => navigate(`/marketplace/${startupId}`)}
                         >
                           <td>
                             <div className="d2-table__startup">
@@ -219,23 +223,33 @@ export default function Dashboard() {
                 </span>
               </div>
               <div className="d2-notif-list">
+                {notifications.length === 0 && (
+                  <p style={{ textAlign: 'center', color: '#9CA3AF', padding: '24px', margin: 0 }}>No notifications yet.</p>
+                )}
                 {notifications.map(n => {
-                  const isRead = n.read || readSet.has(n.id);
+                  const isRead = n.read;
                   const col = NOTIF_ICON_COLOR[n.type] || NOTIF_ICON_COLOR.default;
                   return (
                     <div
-                      key={n.id}
+                      key={n._id}
                       className={`d2-notif ${!isRead ? 'd2-notif--unread' : ''}`}
-                      onClick={() => markRead(n.id)}
+                      onClick={() => markRead(n._id)}
                     >
                       <div className="d2-notif__icon" style={{ background: col + '18' }}>
                         <span className="material-symbols-outlined" style={{ fontSize: 18, color: col }}>
-                          {n.icon}
+                          {n.type === 'vote_request' ? 'how_to_vote'
+                            : n.type === 'fund_release' ? 'account_balance'
+                            : n.type === 'announcement' ? 'campaign'
+                            : n.type === 'milestone_update' ? 'flag'
+                            : n.type === 'qa_answer' ? 'forum'
+                            : n.type === 'variance_alert' ? 'warning'
+                            : 'notifications'}
                         </span>
                       </div>
                       <div style={{ flex: 1 }}>
-                        <p className="d2-notif__msg">{n.message}</p>
-                        <span className="d2-notif__time">{n.time}</span>
+                        <p className="d2-notif__msg" style={{ fontWeight: !isRead ? 700 : 400 }}>{n.title}</p>
+                        <p className="d2-notif__msg" style={{ fontSize: 12, color: '#6B7280', margin: 0 }}>{n.body}</p>
+                        <span className="d2-notif__time">{new Date(n.createdAt).toLocaleDateString()}</span>
                       </div>
                       {!isRead && <div className="d2-unread-dot" />}
                     </div>
@@ -247,7 +261,6 @@ export default function Dashboard() {
         </>
       )}
 
-      {/* ══ FOUNDER VIEW ══ */}
       {isFounder && myStartup && (
         <>
           {/* Founder KPI Strip */}
@@ -354,7 +367,7 @@ export default function Dashboard() {
                   const votes = m.votes || [];
                   const votePct = votes.length > 0 ? Math.round((votes.filter(v => v.approved).length / votes.length) * 100) : 0;
                   return (
-                    <div key={m.id} className="d2-ms-row">
+                    <div key={m._id} className="d2-ms-row">
                       <div className="d2-ms-num">{i + 1}</div>
                       <div style={{ flex: 1 }}>
                         <div className="d2-ms-title">{m.title}</div>
@@ -382,23 +395,33 @@ export default function Dashboard() {
                 <span className="d2-pill d2-pill--indigo">{unreadCount} new</span>
               </div>
               <div className="d2-notif-list">
+                {notifications.length === 0 && (
+                  <p style={{ textAlign: 'center', color: '#9CA3AF', padding: '24px', margin: 0 }}>No notifications yet.</p>
+                )}
                 {notifications.map(n => {
-                  const isRead = n.read || readSet.has(n.id);
+                  const isRead = n.read;
                   const col = NOTIF_ICON_COLOR[n.type] || NOTIF_ICON_COLOR.default;
                   return (
                     <div
-                      key={n.id}
+                      key={n._id}
                       className={`d2-notif ${!isRead ? 'd2-notif--unread' : ''}`}
-                      onClick={() => markRead(n.id)}
+                      onClick={() => markRead(n._id)}
                     >
                       <div className="d2-notif__icon" style={{ background: col + '18' }}>
                         <span className="material-symbols-outlined" style={{ fontSize: 18, color: col }}>
-                          {n.icon}
+                          {n.type === 'vote_request' ? 'how_to_vote'
+                            : n.type === 'fund_release' ? 'account_balance'
+                            : n.type === 'announcement' ? 'campaign'
+                            : n.type === 'milestone_update' ? 'flag'
+                            : n.type === 'qa_answer' ? 'forum'
+                            : n.type === 'variance_alert' ? 'warning'
+                            : 'notifications'}
                         </span>
                       </div>
                       <div style={{ flex: 1 }}>
-                        <p className="d2-notif__msg">{n.message}</p>
-                        <span className="d2-notif__time">{n.time}</span>
+                        <p className="d2-notif__msg" style={{ fontWeight: !isRead ? 700 : 400 }}>{n.title}</p>
+                        <p className="d2-notif__msg" style={{ fontSize: 12, color: '#6B7280', margin: 0 }}>{n.body}</p>
+                        <span className="d2-notif__time">{new Date(n.createdAt).toLocaleDateString()}</span>
                       </div>
                       {!isRead && <div className="d2-unread-dot" />}
                     </div>

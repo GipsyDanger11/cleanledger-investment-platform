@@ -13,7 +13,7 @@ export default function StartupDetails() {
   const [showDAOModal, setShowDAOModal] = useState(false);
   const [voted, setVoted] = useState(null);
 
-  const startup = startups.find((s) => s.id === id);
+  const startup = startups.find((s) => s._id === id);
 
   if (!startup) {
     return (

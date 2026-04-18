@@ -1,0 +1,253 @@
+/* ── Investor Registration ──────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+.ir-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #EEF2FF 0%, #FFFFFF 50%, #F0FDF4 100%);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 20px 60px;
+  font-family: 'Inter', system-ui, sans-serif;
+  position: relative;
+}
+
+.ir-bg-grid {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+}
+
+.ir-back {
+  position: fixed;
+  top: 24px;
+  left: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6B7280;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+  z-index: 10;
+}
+.ir-back:hover { color: #111827; }
+
+.ir-container {
+  width: 100%;
+  max-width: 580px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  position: relative;
+}
+
+/* Header */
+.ir-header { text-align: center; }
+
+.ir-header__badge {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #4F46E5, #6366F1);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  box-shadow: 0 8px 24px rgba(99,102,241,0.3);
+  color: #fff;
+  font-size: 28px;
+}
+
+.ir-header__title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #111827;
+  margin: 0 0 6px;
+}
+.ir-header__sub {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 0;
+}
+
+/* Steps */
+.ir-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  justify-content: center;
+}
+
+.ir-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  flex: 1;
+}
+
+.ir-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: calc(50% + 16px);
+  right: calc(-50% + 16px);
+  height: 2px;
+  background: #E5E7EB;
+}
+.ir-step--done:not(:last-child)::after { background: #6366F1; }
+
+.ir-step__dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #F3F4F6;
+  color: #9CA3AF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  border: 2px solid #E5E7EB;
+  z-index: 1;
+  transition: all 0.2s;
+}
+.ir-step--active .ir-step__dot { background: #6366F1; color: #fff; border-color: #6366F1; }
+.ir-step--done .ir-step__dot   { background: #10B981; color: #fff; border-color: #10B981; }
+.ir-step__label { font-size: 11px; font-weight: 600; color: #9CA3AF; }
+.ir-step--active .ir-step__label { color: #4F46E5; }
+.ir-step--done .ir-step__label   { color: #059669; }
+
+/* Card */
+.ir-card {
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ir-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #DC2626;
+  font-size: 13px;
+}
+
+.ir-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.ir-fields { display: flex; flex-direction: column; gap: 14px; }
+
+.ir-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 480px) { .ir-row { grid-template-columns: 1fr; } }
+
+.ir-field { display: flex; flex-direction: column; gap: 6px; }
+.ir-field label { font-size: 12px; font-weight: 700; color: #374151; }
+
+.ir-input {
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid #E5E7EB;
+  background: #F9FAFB;
+  font-size: 13px;
+  color: #111;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s, background 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.ir-input:focus { border-color: #6366F1; background: #fff; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.ir-input::placeholder { color: #9CA3AF; }
+
+.ir-info-card, .ir-kyc-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #EEF2FF;
+  border: 1px solid #C7D2FE;
+  border-radius: 12px;
+  padding: 14px;
+}
+.ir-kyc-box { background: #F0FDF4; border-color: #A7F3D0; }
+.ir-kyc-box__icon {
+  width: 44px;
+  height: 44px;
+  background: #D1FAE5;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #059669;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.ir-checklist { display: flex; flex-direction: column; gap: 10px; }
+.ir-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.5;
+}
+.ir-check-item input { accent-color: #6366F1; margin-top: 2px; flex-shrink: 0; }
+
+/* Nav */
+.ir-nav-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.ir-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 22px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.ir-btn--primary { background: #6366F1; color: #fff; }
+.ir-btn--primary:hover:not(:disabled) { background: #4F46E5; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(99,102,241,0.3); }
+.ir-btn--primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+.ir-btn--ghost { background: #F3F4F6; color: #374151; }
+.ir-btn--ghost:hover { background: #E5E7EB; }
+
+.ir-login-link {
+  text-align: center;
+  font-size: 13px;
+  color: #6B7280;
+  margin: 0;
+}
+.ir-login-link a { color: #4F46E5; font-weight: 700; text-decoration: none; }
+.ir-login-link a:hover { text-decoration: underline; }

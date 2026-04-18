@@ -14,6 +14,7 @@ const voiceRoutes         = require('./routes/voiceRoutes');
 const profileRoutes       = require('./routes/profileRoutes');
 const trustRoutes         = require('./routes/trustRoutes');
 const communicationRoutes = require('./routes/communicationRoutes');
+const investmentRoutes    = require('./routes/investmentRoutes');
 const errorHandler        = require('./middleware/errorHandler');
 
 const app = express();
@@ -46,14 +47,15 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // ── Routes ───────────────────────────────────────────────────
-app.use('/api/v1/auth',       authRoutes);
-app.use('/api/v1/dashboard',  dashboardRoutes);
-app.use('/api/v1/startups',   startupRoutes);
-app.use('/api/v1/audit',      auditRoutes);
-app.use('/api/v1/voice',      voiceRoutes);
-app.use('/api/v1/profile',    profileRoutes);
-app.use('/api/v1/trust',      trustRoutes);
-app.use('/api/v1',            communicationRoutes);
+app.use('/api/v1/auth',        authRoutes);
+app.use('/api/v1/dashboard',   dashboardRoutes);
+app.use('/api/v1/startups',    startupRoutes);
+app.use('/api/v1/investments', investmentRoutes);
+app.use('/api/v1/audit',       auditRoutes);
+app.use('/api/v1/voice',       voiceRoutes);
+app.use('/api/v1/profile',     profileRoutes);
+app.use('/api/v1/trust',       trustRoutes);
+app.use('/api/v1',             communicationRoutes);
 
 // ── Health check ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => {

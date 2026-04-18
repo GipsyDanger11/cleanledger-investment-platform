@@ -604,3 +604,39 @@
   color: #9CA3AF;
   margin: 10px 0 0;
 }
+
+/* ── Role Picker ── */
+.auth-role-picker {
+  margin-bottom: 4px;
+}
+.auth-role-picker__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6B7280;
+  margin: 0 0 10px;
+  text-align: center;
+}
+.auth-role-picker__cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.auth-role-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 10px;
+  border-radius: 12px;
+  border: 2px solid #E5E7EB;
+  background: #F9FAFB;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.15s;
+}
+.auth-role-card:hover { border-color: #C7D2FE; background: #EEF2FF; }
+.auth-role-card--active { border-color: #6366F1; background: #EEF2FF; }
+.auth-role-card__icon { font-size: 24px !important; }
+.auth-role-card__label { font-size: 13px; font-weight: 700; color: #111827; }
+.auth-role-card__sub   { font-size: 10px; color: #9CA3AF; }
+

@@ -1,0 +1,345 @@
+/* ── Startup Registration CSS ───────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+.sr-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #FDF4FF 0%, #FFFFFF 50%, #EEF2FF 100%);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 20px 60px;
+  font-family: 'Inter', system-ui, sans-serif;
+  position: relative;
+}
+
+.sr-bg-grid {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(139,92,246,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139,92,246,0.04) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+}
+
+.sr-back {
+  position: fixed;
+  top: 24px;
+  left: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6B7280;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+  z-index: 10;
+}
+.sr-back:hover { color: #111827; }
+
+.sr-container {
+  width: 100%;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+}
+
+/* Header */
+.sr-header { text-align: center; }
+.sr-header__badge {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #7C3AED, #8B5CF6);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  box-shadow: 0 8px 24px rgba(124,58,237,0.3);
+  color: #fff;
+  font-size: 28px;
+}
+.sr-header__title { font-size: 26px; font-weight: 800; color: #111827; margin: 0 0 6px; }
+.sr-header__sub   { font-size: 14px; color: #6B7280; margin: 0; }
+
+/* Meta strip */
+.sr-meta-strip {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 14px;
+  padding: 12px 16px;
+}
+.sr-score-wrap { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.sr-score-bar-track { height: 8px; background: #F3F4F6; border-radius: 999px; overflow: hidden; }
+.sr-score-bar-fill  { height: 100%; background: linear-gradient(90deg, #7C3AED, #8B5CF6); border-radius: 999px; transition: width 0.4s ease; }
+.sr-score-label { font-size: 12px; color: #6B7280; }
+.sr-score-label strong { color: #7C3AED; }
+.sr-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Steps */
+.sr-steps {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0;
+  position: relative;
+}
+
+.sr-steps::before {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: 40px;
+  right: 40px;
+  height: 2px;
+  background: #E5E7EB;
+}
+
+.sr-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  z-index: 1;
+  min-width: 80px;
+}
+
+.sr-step__dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #fff;
+  color: #9CA3AF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  border: 2px solid #E5E7EB;
+  transition: all 0.2s;
+}
+.sr-step--active .sr-step__dot { background: #7C3AED; color: #fff; border-color: #7C3AED; box-shadow: 0 0 0 4px rgba(124,58,237,0.15); }
+.sr-step--done .sr-step__dot   { background: #10B981; color: #fff; border-color: #10B981; }
+.sr-step__label { font-size: 10px; font-weight: 600; color: #9CA3AF; text-align: center; max-width: 80px; }
+.sr-step--active .sr-step__label { color: #7C3AED; }
+.sr-step--done .sr-step__label   { color: #059669; }
+
+/* Card */
+.sr-card {
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sr-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #DC2626;
+  font-size: 13px;
+}
+
+.sr-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.sr-divider {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9CA3AF;
+  border-top: 1px solid #F3F4F6;
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+.sr-fields { display: flex; flex-direction: column; gap: 14px; }
+.sr-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 520px) { .sr-row { grid-template-columns: 1fr; } }
+.sr-field { display: flex; flex-direction: column; gap: 5px; }
+.sr-field label { font-size: 12px; font-weight: 700; color: #374151; }
+
+.sr-input {
+  padding: 10px 13px;
+  border-radius: 10px;
+  border: 1px solid #E5E7EB;
+  background: #F9FAFB;
+  font-size: 13px;
+  color: #111;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.sr-input:focus { border-color: #7C3AED; background: #fff; box-shadow: 0 0 0 3px rgba(124,58,237,0.1); }
+.sr-input::placeholder { color: #9CA3AF; }
+.sr-textarea { resize: vertical; }
+.sr-file-input { padding: 8px 12px; cursor: pointer; }
+
+.sr-hint { font-size: 11px; color: #9CA3AF; margin: 2px 0 0; }
+
+.sr-ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #EDE9FE;
+  color: #6D28D9;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.sr-info-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #EEF2FF;
+  border: 1px solid #C7D2FE;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 12px;
+}
+
+/* Team */
+.sr-team-member {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 14px;
+}
+.sr-team-member__num {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #7C3AED, #8B5CF6);
+  color: #fff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  flex-shrink: 0;
+  margin-top: 22px;
+}
+
+/* Milestones */
+.sr-ms-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+  border-top: 1px solid #F3F4F6;
+  padding-top: 12px;
+}
+.sr-ms-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 14px;
+}
+.sr-ms-num {
+  width: 28px;
+  height: 28px;
+  background: #EDE9FE;
+  color: #7C3AED;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  flex-shrink: 0;
+  margin-top: 22px;
+}
+
+.sr-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px dashed #C4B5FD;
+  background: none;
+  color: #7C3AED;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  align-self: flex-start;
+}
+.sr-add-btn:hover { background: #F5F3FF; border-color: #7C3AED; }
+
+/* Nav */
+.sr-nav-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  border-top: 1px solid #F3F4F6;
+  padding-top: 16px;
+}
+
+.sr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 22px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.sr-btn--primary { background: linear-gradient(135deg, #7C3AED, #8B5CF6); color: #fff; }
+.sr-btn--primary:hover:not(:disabled) { opacity: 0.92; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(124,58,237,0.3); }
+.sr-btn--primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+.sr-btn--ghost { background: #F3F4F6; color: #374151; }
+.sr-btn--ghost:hover { background: #E5E7EB; }
+
+.sr-login-link { text-align: center; font-size: 13px; color: #6B7280; margin: 0; }
+.sr-login-link a { color: #7C3AED; font-weight: 700; text-decoration: none; }
+.sr-login-link a:hover { text-decoration: underline; }

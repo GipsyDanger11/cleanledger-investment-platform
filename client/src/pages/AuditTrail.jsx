@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import AuditEntry from '../components/ui/AuditEntry';
 import { useInvestment } from '../context/InvestmentContext';
 import './AuditTrail.css';
@@ -6,7 +6,7 @@ import './AuditTrail.css';
 const TX_TYPES = ['All Types', 'Capital Release', 'Funding Allocation', 'Inter-Account Transfer'];
 
 export default function AuditTrail() {
-  const { auditEntries, startups } = useInvestment();
+  const { auditEntries, startups, fetchAuditEntries, loading } = useInvestment();
   const [typeFilter, setTypeFilter] = useState('All Types');
   const [startupFilter, setStartupFilter] = useState('All Startups');
   const [search, setSearch] = useState('');
@@ -17,17 +17,24 @@ export default function AuditTrail() {
     'Inter-Account Transfer': 'inter_account',
   };
 
+  useEffect(() => {
+    fetchAuditEntries();
+  }, [fetchAuditEntries]);
+
   const filtered = auditEntries.filter((e) => {
     const typeOk = typeFilter === 'All Types' || e.type === typeMap[typeFilter];
-    const startupOk = startupFilter === 'All Startups' || e.startupId === startupFilter || (startupFilter === 'Platform' && !e.startupId);
-    const searchOk = !search || e.hash.includes(search) || e.from.toLowerCase().includes(search.toLowerCase()) || e.to.toLowerCase().includes(search.toLowerCase());
+    const startupId = e.startup?._id || e.startup;
+    const startupOk = startupFilter === 'All Startups' || startupId === startupFilter || (startupFilter === 'Platform' && !startupId);
+    const fromEntity = e.fromEntity || '';
+    const toEntity = e.toEntity || '';
+    const searchOk = !search || e.hash.includes(search) || fromEntity.toLowerCase().includes(search.toLowerCase()) || toEntity.toLowerCase().includes(search.toLowerCase());
     return typeOk && startupOk && searchOk;
   });
 
   const handleExport = () => {
     const csv = [
       ['Block', 'Type', 'From', 'To', 'Amount', 'Hash', 'Timestamp'].join(','),
-      ...filtered.map((e) => [e.blockIndex, e.type, `"${e.from}"`, `"${e.to}"`, e.amount, e.hash, e.timestamp].join(',')),
+      ...filtered.map((e) => [e.blockNumber, e.type, `"${e.fromEntity}"`, `"${e.toEntity}"`, e.amount, e.hash, e.createdAt].join(',')),
     ].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -90,7 +97,7 @@ export default function AuditTrail() {
           <option value="All Startups">All Startups</option>
           <option value="Platform">Platform (No Startup)</option>
           {startups.map((s) => (
-            <option key={s.id} value={s.id}>{s.name}</option>
+            <option key={s._id} value={s._id}>{s.name}</option>
           ))}
         </select>
       </div>
@@ -103,7 +110,7 @@ export default function AuditTrail() {
             Chain Integrity: Verified
           </p>
           <p className="text-label-sm text-secondary" style={{ margin: 0 }}>
-            Latest block #1042 · {filtered.length} entries shown · SHA-256 hash chain valid
+            Latest block #{auditEntries[0]?.blockNumber ?? '-'} · {filtered.length} entries shown · SHA-256 hash chain valid
           </p>
         </div>
         <span className="chip chip--success" style={{ fontSize: '0.6rem', marginLeft: 'auto' }}>
@@ -128,8 +135,14 @@ export default function AuditTrail() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length > 0 ? filtered.map((entry, i) => (
-                <AuditEntry key={entry.id} entry={entry} isOdd={i % 2 === 0} />
+              {loading && filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: 'var(--space-8)', color: 'var(--color-outline)' }}>
+                    Loading audit entries...
+                  </td>
+                </tr>
+              ) : filtered.length > 0 ? filtered.map((entry, i) => (
+                <AuditEntry key={entry._id} entry={entry} isOdd={i % 2 === 0} />
               )) : (
                 <tr>
                   <td colSpan={7} style={{ textAlign: 'center', padding: 'var(--space-8)', color: 'var(--color-outline)' }}>

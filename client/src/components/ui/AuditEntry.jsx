@@ -14,7 +14,7 @@ export default function AuditEntry({ entry, isOdd }) {
     <tr style={{ background: isOdd ? 'var(--color-surface-container-lowest)' : 'var(--color-surface-container-low)' }}>
       {/* Block index */}
       <td className="num" style={{ color: 'var(--color-outline)', width: '80px' }}>
-        #{entry.blockIndex}
+        #{entry.blockNumber}
       </td>
 
       {/* Type chip */}
@@ -32,8 +32,8 @@ export default function AuditEntry({ entry, isOdd }) {
 
       {/* From / To */}
       <td className="text-body-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-        <div>{entry.from}</div>
-        <div style={{ fontSize: '0.6rem', color: 'var(--color-outline)' }}>→ {entry.to}</div>
+        <div>{entry.fromEntity}</div>
+        <div style={{ fontSize: '0.6rem', color: 'var(--color-outline)' }}>→ {entry.toEntity}</div>
       </td>
 
       {/* Amount */}
@@ -55,7 +55,7 @@ export default function AuditEntry({ entry, isOdd }) {
 
       {/* Timestamp */}
       <td className="text-label-sm" style={{ color: 'var(--color-outline)', whiteSpace: 'nowrap' }}>
-        {formatDate(entry.timestamp)}
+        {formatDate(entry.createdAt)}
       </td>
 
       {/* Status */}

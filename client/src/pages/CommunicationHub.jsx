@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useInvestment } from '../context/InvestmentContext';
 import { useAuth } from '../context/AuthContext';
 import './CommunicationHub.css';
@@ -10,25 +10,14 @@ const TABS = [
   { id: 'notifications', label: 'Notifications', icon: 'notifications', desc: 'Push alerts' },
 ];
 
-const STARTUP_OPTIONS = [
-  { id: 'startup_001', name: 'Aura Wind Energy' },
-  { id: 'startup_002', name: 'Solaris Grid Systems' },
-  { id: 'startup_003', name: 'HydroClear Technologies' },
-  { id: 'startup_004', name: 'Verdant Carbon Labs' },
-  { id: 'startup_005', name: 'ThermaVault Energy' },
-  { id: 'startup_006', name: 'AquaTrace Monitoring' },
-];
-
 const NOTIF_TYPE_COLOR = {
-  vote:      { bg: '#EDE9FE', color: '#6D28D9', icon: 'how_to_vote' },
-  milestone: { bg: '#FEF3C7', color: '#D97706', icon: 'flag' },
-  qa:        { bg: '#DBEAFE', color: '#1D4ED8', icon: 'forum' },
-  ledger:    { bg: '#D1FAE5', color: '#065F46', icon: 'receipt_long' },
-  kyb:       { bg: '#D1FAE5', color: '#065F46', icon: 'verified_user' },
-  esg:       { bg: '#ECFDF5', color: '#059669', icon: 'eco' },
-  announce:  { bg: '#FEE2E2', color: '#DC2626', icon: 'campaign' },
-  profile:   { bg: '#E0E7FF', color: '#4338CA', icon: 'person' },
-  fund:      { bg: '#FEF9C3', color: '#CA8A04', icon: 'account_balance' },
+  vote_request: { bg: '#EDE9FE', color: '#6D28D9', icon: 'how_to_vote' },
+  milestone_update: { bg: '#FEF3C7', color: '#D97706', icon: 'flag' },
+  qa_answer: { bg: '#DBEAFE', color: '#1D4ED8', icon: 'forum' },
+  fund_release: { bg: '#D1FAE5', color: '#065F46', icon: 'account_balance' },
+  announcement: { bg: '#FEE2E2', color: '#DC2626', icon: 'campaign' },
+  variance_alert: { bg: '#FEF9C3', color: '#CA8A04', icon: 'warning' },
+  milestone_comment: { bg: '#E0E7FF', color: '#4338CA', icon: 'comment' },
   default:   { bg: '#F3F4F6', color: '#374151', icon: 'notifications' },
 };
 
@@ -47,17 +36,23 @@ export default function CommunicationHub() {
   const { user } = useAuth();
   const {
     startups,
-    investorNotifications,
-    founderNotifications,
-    addQuestion,
+    notifications,
+    fetchStartups,
+    fetchNotifications,
+    fetchQA,
+    fetchAnnouncements,
+    fetchMilestoneComments,
+    askQuestion,
     answerQuestion,
     postAnnouncement,
-    castVote,
-    addMilestoneComment,
+    postMilestoneComment,
   } = useInvestment();
 
   const [tab, setTab]                     = useState('qa');
-  const [selectedStartupId, setSelectedStartupId] = useState('startup_001');
+  const [selectedStartupId, setSelectedStartupId] = useState('');
+  const [qa, setQa] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+  const [milestoneComments, setMilestoneComments] = useState({});
   const [questionText, setQuestionText]   = useState('');
   const [isAnonymous, setIsAnonymous]     = useState(false);
   const [answeringId, setAnsweringId]     = useState(null);
@@ -70,18 +65,44 @@ export default function CommunicationHub() {
   const [msg, setMsg]                     = useState('');
   const [submitting, setSubmitting]       = useState(false);
   const [notifFilter, setNotifFilter]     = useState('all');
-  const [readNotifs, setReadNotifs]       = useState(new Set());
 
-  const isFounder = user?.role === 'founder';
+  const isFounder = user?.role === 'startup';
 
-  const startup = startups.find(s => s.id === selectedStartupId) || startups[0];
-  const qa            = startup?.qa || [];
-  const announcements = startup?.announcements || [];
+  useEffect(() => {
+    fetchStartups();
+    fetchNotifications();
+  }, [fetchStartups, fetchNotifications]);
+
+  useEffect(() => {
+    if (!selectedStartupId && startups.length > 0) {
+      setSelectedStartupId(startups[0]._id);
+    }
+  }, [selectedStartupId, startups]);
+
+  const startup = startups.find(s => s._id === selectedStartupId) || startups[0];
   const milestones    = startup?.milestones || [];
-  const notifications = isFounder ? founderNotifications : investorNotifications;
+
+  useEffect(() => {
+    if (!selectedStartupId) return;
+    const load = async () => {
+      const [qaData, annData] = await Promise.all([
+        fetchQA(selectedStartupId),
+        fetchAnnouncements(selectedStartupId),
+      ]);
+      setQa(qaData || []);
+      setAnnouncements(annData || []);
+
+      const comments = {};
+      for (const m of milestones) {
+        comments[m._id] = await fetchMilestoneComments(selectedStartupId, m._id);
+      }
+      setMilestoneComments(comments);
+    };
+    load();
+  }, [selectedStartupId, fetchQA, fetchAnnouncements, fetchMilestoneComments, startup?._id]);
 
   const unansweredCount = qa.filter(q => !q.isAnswered).length;
-  const unreadCount = notifications.filter(n => !n.read && !readNotifs.has(n.id)).length;
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   const filteredNotifs = notifFilter === 'all'
     ? notifications
@@ -90,56 +111,75 @@ export default function CommunicationHub() {
   const handlePostQuestion = async () => {
     if (!questionText.trim()) return;
     setSubmitting(true);
-    addQuestion(selectedStartupId, { question: questionText.trim(), isAnonymous, authorName: user?.name || 'Investor' });
-    setMsg('Question posted!');
-    setQuestionText('');
-    setIsAnonymous(false);
-    setTimeout(() => setMsg(''), 3000);
-    setSubmitting(false);
+    try {
+      await askQuestion(selectedStartupId, questionText.trim(), isAnonymous);
+      setQa(await fetchQA(selectedStartupId));
+      setMsg('Question posted!');
+      setQuestionText('');
+      setIsAnonymous(false);
+      setTimeout(() => setMsg(''), 3000);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleAnswer = async (qid) => {
     if (!answerText.trim()) return;
     setSubmitting(true);
-    answerQuestion(selectedStartupId, qid, answerText.trim());
-    setAnsweringId(null);
-    setAnswerText('');
-    setMsg('Answer posted!');
-    setTimeout(() => setMsg(''), 3000);
-    setSubmitting(false);
+    try {
+      await answerQuestion(selectedStartupId, qid, answerText.trim());
+      setQa(await fetchQA(selectedStartupId));
+      setAnsweringId(null);
+      setAnswerText('');
+      setMsg('Answer posted!');
+      setTimeout(() => setMsg(''), 3000);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handlePostAnnouncement = () => {
+  const handlePostAnnouncement = async () => {
     if (!annText.trim()) return;
     setSubmitting(true);
-    postAnnouncement(selectedStartupId, { content: annText.trim(), pinned: pinAnn });
-    setAnnText('');
-    setPinAnn(false);
-    setMsg('Announcement posted! Investors notified.');
-    setTimeout(() => setMsg(''), 3000);
-    setSubmitting(false);
+    try {
+      await postAnnouncement(selectedStartupId, annText.trim(), pinAnn);
+      setAnnouncements(await fetchAnnouncements(selectedStartupId));
+      setAnnText('');
+      setPinAnn(false);
+      setMsg('Announcement posted! Investors notified.');
+      setTimeout(() => setMsg(''), 3000);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleMilestoneComment = (milestoneId) => {
+  const handleMilestoneComment = async (milestoneId) => {
     if (!milestoneCommentText.trim()) return;
     setSubmitting(true);
-    addMilestoneComment(selectedStartupId, milestoneId, {
-      author: user?.name || 'Investor',
-      text: milestoneCommentText.trim(),
-      isAnonymous: commentAnonymous,
-      avatar: (user?.name || 'I').substring(0, 2).toUpperCase(),
-    });
-    setCommentMilestoneId(null);
-    setMilestoneCommentText('');
-    setCommentAnonymous(false);
-    setMsg('Comment added!');
-    setTimeout(() => setMsg(''), 3000);
-    setSubmitting(false);
+    try {
+      await postMilestoneComment(selectedStartupId, milestoneId, milestoneCommentText.trim());
+      setMilestoneComments(prev => ({
+        ...prev,
+        [milestoneId]: (prev[milestoneId] || []).concat([{
+          _id: `temp-${Date.now()}`,
+          content: milestoneCommentText.trim(),
+          author: { name: commentAnonymous ? 'Anonymous Investor' : user?.name || 'Investor' },
+          createdAt: new Date().toISOString(),
+          isAnonymous: commentAnonymous,
+        }]),
+      }));
+      setCommentMilestoneId(null);
+      setMilestoneCommentText('');
+      setCommentAnonymous(false);
+      setMsg('Comment added!');
+      setTimeout(() => setMsg(''), 3000);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const markAllRead = () => {
-    const allIds = new Set(notifications.map(n => n.id));
-    setReadNotifs(allIds);
+    // handled in Dashboard + notifications endpoint; this tab is read-only
   };
 
   return (
@@ -160,8 +200,8 @@ export default function CommunicationHub() {
             value={selectedStartupId}
             onChange={e => setSelectedStartupId(e.target.value)}
           >
-            {STARTUP_OPTIONS.map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
+            {startups.map(s => (
+              <option key={s._id} value={s._id}>{s.name}</option>
             ))}
           </select>
         </div>
@@ -280,14 +320,14 @@ export default function CommunicationHub() {
                 </div>
               )}
               {[...qa].reverse().map(q => (
-                <div key={q.id} className={`ch2-qa-item ${q.isAnswered ? 'ch2-qa-item--answered' : ''}`}>
+                <div key={q._id} className={`ch2-qa-item ${q.isAnswered ? 'ch2-qa-item--answered' : ''}`}>
                   <div className="ch2-qa-item__header">
                     <div className="ch2-avatar ch2-avatar--q">
-                      {q.isAnonymous ? '?' : (q.author || 'I').substring(0, 2).toUpperCase()}
+                      {q.isAnonymous ? '?' : (q.author?.name || 'I').substring(0, 2).toUpperCase()}
                     </div>
                     <div className="ch2-qa-item__meta">
                       <span className="ch2-qa-item__author">
-                        {q.isAnonymous ? 'Anonymous Investor' : (q.author || 'Investor')}
+                        {q.isAnonymous ? 'Anonymous Investor' : (q.author?.name || 'Investor')}
                       </span>
                       <span className="ch2-qa-item__time">{formatDate(q.createdAt)}</span>
                     </div>
@@ -320,7 +360,7 @@ export default function CommunicationHub() {
 
                   {/* Answer form — founder only */}
                   {isFounder && !q.isAnswered && (
-                    answeringId === q.id ? (
+                    answeringId === q._id ? (
                       <div className="ch2-answer-form">
                         <textarea
                           className="ch2-textarea"
@@ -330,7 +370,7 @@ export default function CommunicationHub() {
                           onChange={e => setAnswerText(e.target.value)}
                         />
                         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                          <button className="ch2-btn ch2-btn--primary" onClick={() => handleAnswer(q.id)} disabled={submitting || !answerText.trim()}>
+                          <button className="ch2-btn ch2-btn--primary" onClick={() => handleAnswer(q._id)} disabled={submitting || !answerText.trim()}>
                             Post Answer
                           </button>
                           <button className="ch2-btn ch2-btn--ghost" onClick={() => { setAnsweringId(null); setAnswerText(''); }}>
@@ -339,7 +379,7 @@ export default function CommunicationHub() {
                         </div>
                       </div>
                     ) : (
-                      <button className="ch2-answer-trigger" onClick={() => { setAnsweringId(q.id); setMsg(''); }}>
+                      <button className="ch2-answer-trigger" onClick={() => { setAnsweringId(q._id); setMsg(''); }}>
                         <span className="material-symbols-outlined" style={{ fontSize: 15 }}>reply</span>
                         Answer this question
                       </button>
@@ -403,7 +443,7 @@ export default function CommunicationHub() {
                 if (!a.pinned && b.pinned) return 1;
                 return new Date(b.createdAt) - new Date(a.createdAt);
               }).map(ann => (
-                <div key={ann.id} className={`ch2-announcement ${ann.pinned ? 'ch2-announcement--pinned' : ''}`}>
+                <div key={ann._id} className={`ch2-announcement ${ann.pinned ? 'ch2-announcement--pinned' : ''}`}>
                   <div className="ch2-announcement__header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       {ann.pinned && (
@@ -440,17 +480,17 @@ export default function CommunicationHub() {
             </div>
 
             {milestones.map(m => {
-              const comments = m.comments || [];
+              const comments = milestoneComments[m._id] || [];
               const isVotingOpen = m.status === 'submitted';
               const votes = m.votes || [];
               const approvedVotes = votes.filter(v => v.approved).length;
               const votePct = votes.length > 0 ? Math.round((approvedVotes / votes.length) * 100) : 0;
 
               return (
-                <div key={m.id} className={`ch2-milestone-card ${isVotingOpen ? 'ch2-milestone-card--active' : ''}`}>
+                <div key={m._id} className={`ch2-milestone-card ${isVotingOpen ? 'ch2-milestone-card--active' : ''}`}>
                   <div className="ch2-milestone-card__header">
                     <div className="ch2-milestone-badge-row">
-                      <span className="ch2-milestone-num">MILESTONE {m.phase}</span>
+                      <span className="ch2-milestone-num">MILESTONE</span>
                       <span className={`ch2-ms-status ch2-ms-status--${m.status}`}>
                         {m.status.replace('_', ' ').toUpperCase()}
                       </span>
@@ -494,30 +534,30 @@ export default function CommunicationHub() {
                       {comments.length} Comment{comments.length !== 1 ? 's' : ''}
                     </div>
                     {comments.map((c, ci) => (
-                      <div key={ci} className="ch2-comment">
+                      <div key={c._id || ci} className="ch2-comment">
                         <div className="ch2-avatar ch2-avatar--sm">
-                          {c.isAnonymous ? '?' : (c.avatar || 'I')}
+                          {c.isAnonymous ? '?' : (c.author?.name || 'I').substring(0, 2).toUpperCase()}
                         </div>
                         <div className="ch2-comment__body">
                           <div className="ch2-comment__meta">
                             <span className="ch2-comment__author">
-                              {c.isAnonymous ? 'Anonymous Investor' : c.author}
+                              {c.isAnonymous ? 'Anonymous Investor' : (c.author?.name || 'Investor')}
                             </span>
                             {c.isAnonymous && (
                               <span className="ch2-pill ch2-pill--grey" style={{ fontSize: 9 }}>
                                 Anonymous
                               </span>
                             )}
-                            <span className="ch2-comment__time">{formatDate(c.date)}</span>
+                            <span className="ch2-comment__time">{formatDate(c.createdAt)}</span>
                           </div>
-                          <p className="ch2-comment__text">{c.text}</p>
+                          <p className="ch2-comment__text">{c.content}</p>
                         </div>
                       </div>
                     ))}
 
                     {/* Add comment — investors, during voting window */}
                     {!isFounder && isVotingOpen && (
-                      commentMilestoneId === m.id ? (
+                      commentMilestoneId === m._id ? (
                         <div className="ch2-comment-form">
                           <textarea
                             className="ch2-textarea"
@@ -540,7 +580,7 @@ export default function CommunicationHub() {
                             </label>
                             <div style={{ display: 'flex', gap: 8 }}>
                               <button className="ch2-btn ch2-btn--primary ch2-btn--sm"
-                                onClick={() => handleMilestoneComment(m.id)}
+                                onClick={() => handleMilestoneComment(m._id)}
                                 disabled={submitting || !milestoneCommentText.trim()}>
                                 Post Comment
                               </button>
@@ -553,7 +593,7 @@ export default function CommunicationHub() {
                         </div>
                       ) : (
                         <button className="ch2-add-comment-btn"
-                          onClick={() => setCommentMilestoneId(m.id)}>
+                          onClick={() => setCommentMilestoneId(m._id)}>
                           <span className="material-symbols-outlined" style={{ fontSize: 15 }}>add_comment</span>
                           Add comment during voting window
                         </button>
@@ -578,7 +618,7 @@ export default function CommunicationHub() {
           <div className="ch2-section">
             {/* Filter bar */}
             <div className="ch2-notif-filters">
-              {['all','vote','milestone','qa','announce','ledger'].map(f => (
+              {['all','vote_request','milestone_update','qa_answer','announcement','fund_release'].map(f => (
                 <button
                   key={f}
                   className={`ch2-pill-btn ${notifFilter === f ? 'active' : ''}`}
@@ -601,12 +641,12 @@ export default function CommunicationHub() {
               )}
               {filteredNotifs.map(n => {
                 const meta = NOTIF_TYPE_COLOR[n.type] || NOTIF_TYPE_COLOR.default;
-                const isRead = n.read || readNotifs.has(n.id);
+                const isRead = n.read;
                 return (
                   <div
-                    key={n.id}
+                    key={n._id}
                     className={`ch2-notif-item ${!isRead ? 'ch2-notif-item--unread' : ''}`}
-                    onClick={() => setReadNotifs(prev => new Set([...prev, n.id]))}
+                    onClick={() => null}
                   >
                     <div className="ch2-notif-icon" style={{ background: meta.bg }}>
                       <span className="material-symbols-outlined" style={{ fontSize: 18, color: meta.color }}>
@@ -614,8 +654,8 @@ export default function CommunicationHub() {
                       </span>
                     </div>
                     <div className="ch2-notif-body">
-                      <p className="ch2-notif-message">{n.message}</p>
-                      <span className="ch2-notif-time">{n.time}</span>
+                      <p className="ch2-notif-message">{n.title}</p>
+                      <span className="ch2-notif-time">{formatDate(n.createdAt)}</span>
                     </div>
                     {!isRead && <div className="ch2-unread-dot" />}
                   </div>

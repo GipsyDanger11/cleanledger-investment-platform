@@ -327,6 +327,31 @@ export default function AuthPage() {
             </div>
           )}
 
+          {/* ── ROLE-SELECTION CARDS (signup mode) ── */}
+          {mode === 'signup' && (
+            <div className="auth-role-picker">
+              <p className="auth-role-picker__label">I am registering as a…</p>
+              <div className="auth-role-picker__cards">
+                <button
+                  className={`auth-role-card ${role === 'investor' ? 'auth-role-card--active' : ''}`}
+                  onClick={() => setRole('investor')}
+                >
+                  <span className="material-symbols-outlined auth-role-card__icon" style={{ color: '#4F46E5' }}>account_balance_wallet</span>
+                  <span className="auth-role-card__label">Investor</span>
+                  <span className="auth-role-card__sub">Fund verified startups</span>
+                </button>
+                <button
+                  className={`auth-role-card ${role === 'startup' ? 'auth-role-card--active' : ''}`}
+                  onClick={() => setRole('startup')}
+                >
+                  <span className="material-symbols-outlined auth-role-card__icon" style={{ color: '#7C3AED' }}>rocket_launch</span>
+                  <span className="auth-role-card__label">Startup / Founder</span>
+                  <span className="auth-role-card__sub">Raise capital transparently</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Form */}
           <form className="auth-form" onSubmit={handleSubmit}>
             {mode === 'signup' && (
@@ -462,19 +487,32 @@ export default function AuthPage() {
             <button className="auth-demo-btn auth-demo-btn--investor" onClick={() => fillDemo('investor')}>
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>account_balance_wallet</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 12 }}>Investor View</div>
+                <div style={{ fontWeight: 700, fontSize: 12 }}>Investor Login</div>
                 <div style={{ fontSize: 10, opacity: 0.75 }}>James Whitfield</div>
               </div>
             </button>
             <button className="auth-demo-btn auth-demo-btn--founder" onClick={() => fillDemo('founder')}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>business_center</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>rocket_launch</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 12 }}>Founder View</div>
-                <div style={{ fontSize: 10, opacity: 0.75 }}>Priya Mehta · Aura Wind Energy</div>
+                <div style={{ fontWeight: 700, fontSize: 12 }}>Startup Login</div>
+                <div style={{ fontSize: 10, opacity: 0.75 }}>Priya Mehta · Aura Wind</div>
               </div>
             </button>
           </div>
-          <p className="auth-demo-panel__note">Works offline — no backend needed for demo</p>
+          <div className="auth-demo-panel__row" style={{ marginTop: 8 }}>
+            <button className="auth-demo-btn" style={{ background: '#FEF3C7', color: '#92400E', gridColumn: '1/-1' }}
+              onClick={() => { setMode('login'); setEmail('admin@cleanledger.io'); setPassword('Admin1234!'); }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>admin_panel_settings</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 12 }}>Admin Login</div>
+                <div style={{ fontSize: 10, opacity: 0.75 }}>admin@cleanledger.io · Admin1234!</div>
+              </div>
+            </button>
+          </div>
+          <p className="auth-demo-panel__note">
+            Or register: <a href="/register/investor" style={{ color: '#4F46E5', fontWeight: 700 }}>Investor Wizard</a>{' '}·{' '}
+            <a href="/register/startup" style={{ color: '#7C3AED', fontWeight: 700 }}>Startup Wizard</a>
+          </p>
         </div>
       </div>
 

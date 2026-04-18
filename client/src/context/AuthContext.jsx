@@ -20,7 +20,7 @@ const MOCK_FOUNDER = {
   id: 'usr_002',
   email: 'priya.mehta@aurawind.com',
   name: 'Priya Mehta',
-  role: 'founder',
+  role: 'startup',
   kycStatus: 'verified',
   entityType: 'company',
   organization: 'Aura Wind Energy',

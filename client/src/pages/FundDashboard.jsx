@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useInvestment } from '../context/InvestmentContext';
 import './FundDashboard.css';
 
@@ -8,15 +8,6 @@ const CATEGORY_META = {
   operations: { label: 'Operations',          color: '#D97706', icon: 'settings' },
   legal:      { label: 'Legal & Compliance',  color: '#059669', icon: 'gavel' },
 };
-
-const STARTUP_OPTIONS = [
-  { id: 'startup_001', name: 'Aura Wind Energy' },
-  { id: 'startup_002', name: 'Solaris Grid Systems' },
-  { id: 'startup_003', name: 'HydroClear Technologies' },
-  { id: 'startup_004', name: 'Verdant Carbon Labs' },
-  { id: 'startup_005', name: 'ThermaVault Energy' },
-  { id: 'startup_006', name: 'AquaTrace Monitoring' },
-];
 
 function ExpenseCategoryBar({ cat, planned, actual }) {
   const meta = CATEGORY_META[cat];
@@ -57,13 +48,23 @@ function ExpenseCategoryBar({ cat, planned, actual }) {
 }
 
 export default function FundDashboard() {
-  const { startups } = useInvestment();
-  const [selectedStartupId, setSelectedStartupId] = useState('startup_001');
+  const { startups, fetchStartups, addExpense } = useInvestment();
+  const [selectedStartupId, setSelectedStartupId] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
   const [expenseForm, setExpenseForm] = useState({ category: 'tech', amount: '', description: '', receiptUrl: '' });
   const [submitMsg, setSubmitMsg] = useState('');
 
-  const startup = startups.find(s => s.id === selectedStartupId) || startups[0];
+  useEffect(() => {
+    fetchStartups();
+  }, [fetchStartups]);
+
+  useEffect(() => {
+    if (!selectedStartupId && startups.length > 0) {
+      setSelectedStartupId(startups[0]._id);
+    }
+  }, [selectedStartupId, startups]);
+
+  const startup = startups.find(s => s._id === selectedStartupId) || startups[0];
   if (!startup) return null;
 
   const alloc = startup.fundAllocation || {};
@@ -79,11 +80,23 @@ export default function FundDashboard() {
     return planned > 0 && Math.abs(actual - planned) > 20;
   });
 
-  const handleAddExpense = (e) => {
+  const handleAddExpense = async (e) => {
     e.preventDefault();
-    setSubmitMsg('Expense recorded and immutable audit entry created! ✓');
-    setExpenseForm({ category: 'tech', amount: '', description: '', receiptUrl: '' });
-    setTimeout(() => setSubmitMsg(''), 4000);
+    try {
+      await addExpense(startup._id, {
+        category: expenseForm.category,
+        amount: Number(expenseForm.amount),
+        description: expenseForm.description,
+        receiptUrl: expenseForm.receiptUrl,
+      });
+      await fetchStartups();
+      setSubmitMsg('Expense recorded and immutable audit entry created! ✓');
+      setExpenseForm({ category: 'tech', amount: '', description: '', receiptUrl: '' });
+      setTimeout(() => setSubmitMsg(''), 4000);
+    } catch (err) {
+      setSubmitMsg(err.message || 'Failed to record expense');
+      setTimeout(() => setSubmitMsg(''), 4000);
+    }
   };
 
   return (
@@ -100,8 +113,8 @@ export default function FundDashboard() {
             value={selectedStartupId}
             onChange={e => setSelectedStartupId(e.target.value)}
           >
-            {STARTUP_OPTIONS.map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
+            {startups.map(s => (
+              <option key={s._id} value={s._id}>{s.name}</option>
             ))}
           </select>
           <span className="fd-verify-badge" style={{
