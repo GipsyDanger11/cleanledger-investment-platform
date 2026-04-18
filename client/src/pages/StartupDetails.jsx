@@ -12,7 +12,7 @@ export default function StartupDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { startups, fetchStartup, walletBalance, invest, fetchWallet, fheAggregate } = useInvestment();
+  const { startups, fetchStartup, walletBalance, invest, fetchWallet, fheAggregate, analyzePitch } = useInvestment();
   const [detail, setDetail] = useState(null);
   const [loadError, setLoadError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -29,6 +29,25 @@ export default function StartupDetails() {
   // ── FHE State ───────────────────────────────────────────────
   const [fheResult, setFheResult] = useState(null);
   const [fheLoading, setFheLoading] = useState(false);
+
+  // ── AI Analysis State ───────────────────────────────────────
+  const [pitchText, setPitchText] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const handleAnalyzePitch = async () => {
+    if (!pitchText.trim()) return alert('Please enter pitch text.');
+    setIsAnalyzing(true);
+    try {
+      const res = await analyzePitch(id, pitchText);
+      // Update local state directly to show result
+      setDetail(prev => ({ ...prev, startup: { ...prev.startup, aiAnalysis: res } }));
+      setPitchText('');
+    } catch (e) {
+      alert('Analysis failed: ' + e.message);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const handleFHE = async () => {
     setFheLoading(true);
@@ -201,6 +220,66 @@ export default function StartupDetails() {
               </button>
             </div>
           )}
+
+          {/* AI Pitch Analysis */}
+          {startup.aiAnalysis && startup.aiAnalysis.summary ? (
+            <div className="card" style={{ background: 'linear-gradient(to right, var(--color-surface-container), var(--color-surface-container-low))', borderLeft: '4px solid #F59E0B' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--space-3)' }}>
+                <span className="material-symbols-outlined" style={{ color: '#F59E0B', fontSize: '20px' }}>psychology</span>
+                <h2 className="text-title" style={{ margin: 0 }}>Mistral AI Pitch Analysis</h2>
+                <span className="chip" style={{ marginLeft: 'auto', background: '#F59E0B20', color: '#B45309', fontWeight: 600 }}>
+                  Score: {startup.aiAnalysis.score}/100
+                </span>
+              </div>
+              
+              <p className="text-body-md text-secondary" style={{ marginBottom: 'var(--space-4)' }}>
+                {startup.aiAnalysis.summary}
+              </p>
+              
+              <div className="flex" style={{ gap: 'var(--space-4)', flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 200px' }}>
+                  <h4 className="text-label-sm" style={{ color: '#10B981', marginBottom: 'var(--space-2)' }}>Key Strengths</h4>
+                  <ul className="text-body-sm text-secondary" style={{ paddingLeft: 'var(--space-4)', margin: 0 }}>
+                    {startup.aiAnalysis.strengths.map((str, i) => <li key={i}>{str}</li>)}
+                    {startup.aiAnalysis.strengths.length === 0 && <li>No specific strengths identified.</li>}
+                  </ul>
+                </div>
+                <div style={{ flex: '1 1 200px' }}>
+                  <h4 className="text-label-sm" style={{ color: '#EF4444', marginBottom: 'var(--space-2)' }}>Risk Flags</h4>
+                  <ul className="text-body-sm text-secondary" style={{ paddingLeft: 'var(--space-4)', margin: 0 }}>
+                    {startup.aiAnalysis.weaknesses.map((wk, i) => <li key={i}>{wk}</li>)}
+                    {startup.aiAnalysis.weaknesses.length === 0 && <li>No specific risk flags identified.</li>}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          ) : user?.role === 'startup' && startup.createdBy === user._id ? (
+            <div className="card">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--space-3)' }}>
+                <span className="material-symbols-outlined" style={{ color: '#F59E0B', fontSize: '20px' }}>smart_toy</span>
+                <h2 className="text-title" style={{ margin: 0 }}>Generate AI Pitch Analysis</h2>
+              </div>
+              <p className="text-body-sm text-secondary" style={{ marginBottom: 'var(--space-3)' }}>
+                Paste your business plan or pitch transcript here. Mistral JARVIS will analyze it and display an executive structured breakdown on your profile for investors.
+              </p>
+              <textarea 
+                className="input" 
+                rows="4" 
+                placeholder="Paste pitch text here..." 
+                value={pitchText} 
+                onChange={(e) => setPitchText(e.target.value)}
+                style={{ width: '100%', marginBottom: 'var(--space-3)', resize: 'vertical' }}
+              />
+              <button 
+                className="btn btn-secondary" 
+                onClick={handleAnalyzePitch} 
+                disabled={isAnalyzing}
+                style={{ width: '100%', justifyContent: 'center' }}
+              >
+                {isAnalyzing ? 'Analyzing with Mistral...' : 'Generate Analysis'}
+              </button>
+            </div>
+          ) : null}
 
           {/* Milestones */}
           <div className="card">

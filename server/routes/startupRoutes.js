@@ -21,6 +21,7 @@ router.get('/:id/milestones', ctrl.getMilestones);
 router.post('/',                           protect, ctrl.createStartup);
 router.patch('/:id',                       protect, ctrl.updateStartup);
 router.patch('/:id/verification',          protect, ctrl.updateVerificationStatus);
+router.post('/:id/analyze-pitch',          protect, ctrl.analyzePitch);
 
 // R2 — Fund tracking
 router.get('/:id/funds',                   protect, ctrl.getFundDashboard);

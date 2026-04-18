@@ -6,6 +6,7 @@ const {
   sanitizeTeamMembersForStartup,
   sanitizeMilestonesForStartup,
 } = require('../utils/registrationMappers');
+const { analyzePitchText } = require('../services/pitchMistral');
 
 const STARTUP_WRITE_FIELDS = [
   'name',
@@ -370,4 +371,30 @@ exports.checkMissedMilestones = catchAsync(async (req, res) => {
     if (changed) await startup.save();
   }
   res.json({ success: true, message: `Flagged ${flagged} missed milestones` });
+});
+
+// ── R4: AI Pitch Analysis ───────────────────────────────────
+exports.analyzePitch = catchAsync(async (req, res) => {
+  const startup = await Startup.findOne({ _id: req.params.id, createdBy: req.user._id });
+  if (!startup) return apiError(res, 404, 'Startup not found or unauthorized');
+
+  const { pitchText } = req.body;
+  if (!pitchText) return apiError(res, 400, 'pitchText is required');
+
+  try {
+    const aiResult = await analyzePitchText(pitchText);
+    
+    // Store in DB mapping to the new schema
+    startup.aiAnalysis = {
+      summary: aiResult.summary || '',
+      strengths: aiResult.trustSignals || aiResult.keyPoints || [],
+      weaknesses: aiResult.riskFlags || [],
+      score: aiResult.viabilityScore || 0
+    };
+    
+    await startup.save();
+    res.json({ success: true, data: startup.aiAnalysis });
+  } catch (err) {
+    return apiError(res, 500, 'AI Analysis failed: ' + err.message);
+  }
 });

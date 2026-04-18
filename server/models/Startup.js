@@ -144,6 +144,14 @@ const startupSchema = new mongoose.Schema(
 
     esgScore:   { type: Number, default: 0, min: 0, max: 100 },
     createdBy:  { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    
+    // ── AI Analysis
+    aiAnalysis: {
+      summary: String,
+      strengths: [String],
+      weaknesses: [String],
+      score: { type: Number, min: 0, max: 100 }
+    }
   },
   { timestamps: true }
 );

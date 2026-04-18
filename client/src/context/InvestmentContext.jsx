@@ -131,6 +131,13 @@ export function InvestmentProvider({ children }) {
     return data.data;
   }, [tok]);
 
+  // ── Action: AI Pitch Analysis ──────────────────────────────
+  const analyzePitch = useCallback(async (startupId, pitchText) => {
+    const data = await api('POST', `/startups/${startupId}/analyze-pitch`, { pitchText }, tok());
+    return data.data;
+  }, [tok]);
+
+
   // ── Fetch: audit trail ─────────────────────────────────────
   const fetchAuditEntries = useCallback(async (params = {}) => {
     try {
@@ -355,6 +362,7 @@ export function InvestmentProvider({ children }) {
     postMilestoneComment,
     markNotificationRead,
     markAllNotificationsRead,
+    analyzePitch,
   };
 
   return (
