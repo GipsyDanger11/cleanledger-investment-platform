@@ -3,18 +3,23 @@ import AuditEntry from '../components/ui/AuditEntry';
 import { useInvestment } from '../context/InvestmentContext';
 import './AuditTrail.css';
 
-const TX_TYPES = ['All Types', 'Capital Release', 'Funding Allocation', 'Inter-Account Transfer'];
+const TX_TYPES = ['All Types', 'Capital Release', 'Funding Allocation', 'Inter-Account Transfer', 'Investment', 'Milestone Complete'];
 
 export default function AuditTrail() {
-  const { auditEntries, startups, fetchAuditEntries, loading } = useInvestment();
+  const { auditEntries, startups, fetchAuditEntries, verifyChainIntegrity, simulateTamper, loading } = useInvestment();
   const [typeFilter, setTypeFilter] = useState('All Types');
   const [startupFilter, setStartupFilter] = useState('All Startups');
   const [search, setSearch] = useState('');
+  const [chainStatus, setChainStatus] = useState(null);   // null | { valid, brokenAt, total, checkedAt, ... }
+  const [verifying, setVerifying] = useState(false);
+  const [tampering, setTampering] = useState(false);
 
   const typeMap = {
-    'Capital Release': 'capital_release',
-    'Funding Allocation': 'funding_allocation',
-    'Inter-Account Transfer': 'inter_account',
+    'Capital Release':          'capital_release',
+    'Funding Allocation':       'funding_allocation',
+    'Inter-Account Transfer':   'inter_account',
+    'Investment':               'investment',
+    'Milestone Complete':       'milestone_complete',
   };
 
   useEffect(() => {
@@ -33,14 +38,48 @@ export default function AuditTrail() {
 
   const handleExport = () => {
     const csv = [
-      ['Block', 'Type', 'From', 'To', 'Amount', 'Hash', 'Timestamp'].join(','),
-      ...filtered.map((e) => [e.blockNumber, e.type, `"${e.fromEntity}"`, `"${e.toEntity}"`, e.amount, e.hash, e.createdAt].join(',')),
+      ['Block', 'Type', 'From', 'To', 'Amount', 'Hash', 'PrevHash', 'Timestamp'].join(','),
+      ...filtered.map((e) => [e.blockNumber, e.type, `"${e.fromEntity}"`, `"${e.toEntity}"`, e.amount, e.hash, e.previousHash, e.createdAt].join(',')),
     ].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = 'cleanledger-audit.csv'; a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleVerify = async () => {
+    setVerifying(true);
+    setChainStatus(null);
+    try {
+      const result = await verifyChainIntegrity();
+      setChainStatus(result);
+    } catch (e) {
+      setChainStatus({ valid: false, message: e.message || 'Verification failed.', total: 0, checkedAt: new Date().toISOString() });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleTamper = async () => {
+    if (!window.confirm('⚠️ This will tamper with the most recent transaction block directly in the database (bypassing Mongoose safeguards) to demonstrate how the blockchain detects modifications. Continue?')) {
+      return;
+    }
+    setTampering(true);
+    try {
+      const res = await simulateTamper();
+      if (res?.message) {
+        alert(res.message);
+      }
+      setTimeout(() => {
+        handleVerify(); // auto-verify to show the failure!
+        fetchAuditEntries(); // refresh UI to show the new tampered data
+      }, 500);
+    } catch (e) {
+      alert('Tampering failed: ' + e.message);
+    } finally {
+      setTampering(false);
+    }
   };
 
   return (
@@ -51,10 +90,36 @@ export default function AuditTrail() {
           <h1>Immutable Audit Trail</h1>
           <p>Bank-grade cryptographic ledger. All transactions are permanently recorded, hashed, and chained to ensure absolute data integrity.</p>
         </div>
-        <button className="btn btn-secondary" onClick={handleExport} id="export-audit-btn">
-          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>download</span>
-          Export CSV
-        </button>
+        <div className="flex gap-3 flex-wrap justify-end">
+          <button
+            className="btn btn-secondary"
+            onClick={handleTamper}
+            disabled={tampering}
+            title="Injects a modification via pure MongoDB driver to bypass app safeguards."
+            style={{ borderColor: 'rgba(239,68,68,0.4)', color: '#ef4444' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
+              {tampering ? 'progress_activity' : 'warning'}
+            </span>
+            {tampering ? 'Tampering…' : 'Simulate Tamper (Demo)'}
+          </button>
+          <button
+            id="btn-verify-chain"
+            className="btn btn-secondary"
+            onClick={handleVerify}
+            disabled={verifying}
+            style={{ borderColor: 'rgba(16,185,129,0.4)', color: '#10b981' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
+              {verifying ? 'progress_activity' : 'verified_user'}
+            </span>
+            {verifying ? 'Verifying…' : 'Verify Chain'}
+          </button>
+          <button className="btn btn-secondary" onClick={handleExport} id="export-audit-btn">
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>download</span>
+            Export CSV
+          </button>
+        </div>
       </div>
 
       {/* Filter Bar */}
@@ -102,22 +167,51 @@ export default function AuditTrail() {
         </select>
       </div>
 
-      {/* Chain integrity banner */}
-      <div className="alert-banner audit-trail__chain-banner">
-        <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)' }}>link</span>
-        <div>
-          <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0, fontWeight: 600 }}>
-            Chain Integrity: Verified
-          </p>
-          <p className="text-label-sm text-secondary" style={{ margin: 0 }}>
-            Latest block #{auditEntries[0]?.blockNumber ?? '-'} · {filtered.length} entries shown · SHA-256 hash chain valid
-          </p>
+      {/* Chain integrity result banner */}
+      {chainStatus ? (
+        <div
+          id="chain-verify-result"
+          className="alert-banner audit-trail__chain-banner"
+          style={{
+            borderColor: chainStatus.valid ? 'rgba(16,185,129,0.35)' : 'rgba(239,68,68,0.35)',
+            background:  chainStatus.valid ? 'rgba(16,185,129,0.06)' : 'rgba(239,68,68,0.06)',
+          }}
+        >
+          <span className="material-symbols-outlined" style={{ color: chainStatus.valid ? '#10b981' : '#ef4444', fontVariationSettings: "'FILL' 1" }}>
+            {chainStatus.valid ? 'verified_user' : 'gpp_bad'}
+          </span>
+          <div>
+            <p className="text-label-md" style={{ color: chainStatus.valid ? '#10b981' : '#ef4444', margin: 0, fontWeight: 700 }}>
+              {chainStatus.valid ? `✅ Chain Valid — ${chainStatus.total} block${chainStatus.total !== 1 ? 's' : ''} verified` : `❌ Chain Tampered — Break at Block #${chainStatus.brokenAt}`}
+            </p>
+            <p className="text-label-sm text-secondary" style={{ margin: '2px 0 0' }}>
+              {chainStatus.valid
+                ? `SHA-256 hash chain intact · Checked at ${new Date(chainStatus.checkedAt).toLocaleTimeString()}`
+                : `${chainStatus.message || 'Hash mismatch detected.'} · ${chainStatus.brokenType || ''}`
+              }
+            </p>
+          </div>
+          <span className={`chip ${chainStatus.valid ? 'chip--success' : 'chip--error'}`} style={{ fontSize: '0.6rem', marginLeft: 'auto' }}>
+            {chainStatus.valid ? 'Immutable' : 'TAMPERED'}
+          </span>
         </div>
-        <span className="chip chip--success" style={{ fontSize: '0.6rem', marginLeft: 'auto' }}>
-          <span className="material-symbols-outlined" style={{ fontSize: '11px', fontVariationSettings: "'FILL' 1" }}>verified</span>
-          Immutable
-        </span>
-      </div>
+      ) : (
+        <div className="alert-banner audit-trail__chain-banner">
+          <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)' }}>link</span>
+          <div>
+            <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0, fontWeight: 600 }}>
+              SHA-256 Hash Chain
+            </p>
+            <p className="text-label-sm text-secondary" style={{ margin: 0 }}>
+              Latest block #{auditEntries[0]?.blockNumber ?? '—'} · {filtered.length} entries shown · Click "Verify Chain" to run integrity check
+            </p>
+          </div>
+          <span className="chip chip--success" style={{ fontSize: '0.6rem', marginLeft: 'auto' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '11px', fontVariationSettings: "'FILL' 1" }}>verified</span>
+            Tamper-Evident
+          </span>
+        </div>
+      )}
 
       {/* Ledger Table */}
       <div className="card audit-trail__table-wrap">
@@ -128,8 +222,9 @@ export default function AuditTrail() {
                 <th>Block</th>
                 <th>Type</th>
                 <th>Entity</th>
-                <th className="num">Amount (USD)</th>
+                <th className="num">Amount (₹)</th>
                 <th>Hash</th>
+                <th>Prev Hash</th>
                 <th>Timestamp</th>
                 <th>Status</th>
               </tr>
@@ -137,7 +232,7 @@ export default function AuditTrail() {
             <tbody>
               {loading && filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: 'var(--space-8)', color: 'var(--color-outline)' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: 'var(--space-8)', color: 'var(--color-outline)' }}>
                     Loading audit entries...
                   </td>
                 </tr>

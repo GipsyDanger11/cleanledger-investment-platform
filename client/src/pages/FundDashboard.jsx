@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useInvestment } from '../context/InvestmentContext';
 import { useAuth } from '../context/AuthContext';
+import WalletWidget from '../components/ui/WalletWidget';
 import './FundDashboard.css';
 
 const CATEGORY_META = {
@@ -50,7 +51,7 @@ function ExpenseCategoryBar({ cat, planned, actual }) {
 
 export default function FundDashboard() {
   const { user } = useAuth();
-  const { startups, fetchStartups, addExpense, myStartup, fetchMyStartup } = useInvestment();
+  const { startups, fetchStartups, addExpense, myStartup, fetchMyStartup, walletBalance } = useInvestment();
   const isFounder = user?.role === 'startup';
   const hubStartups = useMemo(() => {
     if (!isFounder) return startups;
@@ -153,6 +154,12 @@ export default function FundDashboard() {
         </div>
       </div>
 
+      {isFounder && walletBalance !== null && (
+        <div style={{ marginBottom: 'var(--space-6)' }}>
+          <WalletWidget balance={walletBalance} />
+        </div>
+      )}
+
       {/* ── Variance Alerts ── */}
       {varianceAlerts.length > 0 && (
         <div className="fd-alert-banner">
@@ -185,12 +192,12 @@ export default function FundDashboard() {
           <div className="fd-kpi-card__icon-wrap" style={{ background: '#EEF2FF' }}>
             <span className="material-symbols-outlined" style={{ color: '#4F46E5', fontSize: 22 }}>savings</span>
           </div>
-          <div className="fd-kpi-card__value">${totalRaised.toLocaleString()}</div>
+          <div className="fd-kpi-card__value">₹{totalRaised.toLocaleString('en-IN')}</div>
           <div className="fd-kpi-card__label">Total Raised</div>
           <div className="fd-kpi-card__bar-track">
             <div className="fd-kpi-card__bar-fill" style={{ width: `${raisedPct}%`, background: '#4F46E5' }} />
           </div>
-          <div className="fd-kpi-card__sub">{raisedPct.toFixed(1)}% of ${fundingTarget.toLocaleString()} goal</div>
+          <div className="fd-kpi-card__sub">{raisedPct.toFixed(1)}% of ₹{fundingTarget.toLocaleString('en-IN')} goal</div>
         </div>
 
         {/* Total Expenses */}
@@ -198,7 +205,7 @@ export default function FundDashboard() {
           <div className="fd-kpi-card__icon-wrap" style={{ background: '#EDE9FE' }}>
             <span className="material-symbols-outlined" style={{ color: '#7C3AED', fontSize: 22 }}>receipt_long</span>
           </div>
-          <div className="fd-kpi-card__value">${totalExpenses.toLocaleString()}</div>
+          <div className="fd-kpi-card__value">₹{totalExpenses.toLocaleString('en-IN')}</div>
           <div className="fd-kpi-card__label">Total Expenses</div>
           <div className="fd-kpi-card__bar-track">
             <div className="fd-kpi-card__bar-fill" style={{ width: `${Math.min((totalExpenses / totalRaised) * 100, 100)}%`, background: '#7C3AED' }} />
@@ -340,7 +347,7 @@ export default function FundDashboard() {
                     </div>
                   </div>
                   <div className="fd-expense-item__right">
-                    <div className="fd-expense-item__amount">${exp.amount.toLocaleString()}</div>
+                    <div className="fd-expense-item__amount">₹{exp.amount.toLocaleString('en-IN')}</div>
                     {exp.receiptUrl && (
                       <a href={exp.receiptUrl} target="_blank" rel="noreferrer" className="fd-expense-item__link">
                         View Receipt ↗
@@ -379,7 +386,7 @@ export default function FundDashboard() {
                 </select>
               </div>
               <div className="fd-form-field">
-                <label className="fd-form-label">Amount (USD) *</label>
+                <label className="fd-form-label">Amount (₹) *</label>
                 <input
                   className="fd-form-input"
                   type="number"
@@ -412,11 +419,13 @@ export default function FundDashboard() {
 
             {submitMsg && (
               <div className="fd-submit-msg" style={{
-                background: '#D1FAE5',
-                color: '#065F46',
-                border: '1px solid #A7F3D0',
+                background: submitMsg.includes('Insufficient') || submitMsg.includes('Failed') ? '#FEE2E2' : '#D1FAE5',
+                color: submitMsg.includes('Insufficient') || submitMsg.includes('Failed') ? '#DC2626' : '#065F46',
+                border: `1px solid ${submitMsg.includes('Insufficient') || submitMsg.includes('Failed') ? '#FCA5A5' : '#A7F3D0'}`,
               }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check_circle</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                  {submitMsg.includes('Insufficient') || submitMsg.includes('Failed') ? 'error' : 'check_circle'}
+                </span>
                 {submitMsg}
               </div>
             )}

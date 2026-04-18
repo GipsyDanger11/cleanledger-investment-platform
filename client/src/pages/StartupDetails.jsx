@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import MilestoneBar from '../components/ui/MilestoneBar';
 import TrustScoreBadge from '../components/ui/TrustScoreBadge';
+import WalletWidget from '../components/ui/WalletWidget';
 import { useInvestment } from '../context/InvestmentContext';
 import { formatCurrency } from '../utils/formatCurrency';
 import './StartupDetails.css';
@@ -9,12 +11,20 @@ import './StartupDetails.css';
 export default function StartupDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { startups, fetchStartup } = useInvestment();
+  const { user } = useAuth();
+  const { startups, fetchStartup, walletBalance, invest, fetchWallet } = useInvestment();
   const [detail, setDetail] = useState(null);
   const [loadError, setLoadError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showDAOModal, setShowDAOModal] = useState(false);
   const [voted, setVoted] = useState(null);
+
+  // ── Invest modal state ──────────────────────────────────────
+  const [showInvestModal, setShowInvestModal]   = useState(false);
+  const [investAmount,    setInvestAmount]       = useState('');
+  const [investLoading,   setInvestLoading]      = useState(false);
+  const [investError,     setInvestError]        = useState('');
+  const [investSuccess,   setInvestSuccess]      = useState(null); // { amount, blockHash, newBalance }
 
   useEffect(() => {
     let cancelled = false;
@@ -69,6 +79,49 @@ export default function StartupDetails() {
   const handleVote = (vote) => {
     setVoted(vote);
     setTimeout(() => setShowDAOModal(false), 1500);
+  };
+
+  // ── Invest handler ──────────────────────────────────────────
+  const handleInvest = async () => {
+    setInvestError('');
+    const amt = Number(investAmount);
+    if (!amt || amt < 1000) {
+      setInvestError('Minimum investment is ₹1,000.');
+      return;
+    }
+    if (walletBalance !== null && amt > walletBalance) {
+      setInvestError(`Insufficient balance. You have ₹${walletBalance.toLocaleString('en-IN')}.`);
+      return;
+    }
+    setInvestLoading(true);
+    try {
+      const result = await invest(id, amt, `Round — ${startup.name}`);
+      setInvestSuccess({
+        amount:     amt,
+        blockHash:  result.data?.blockHash || '',
+        blockNumber: result.data?.blockNumber,
+        newBalance: result.data?.walletBalance,
+      });
+      setInvestAmount('');
+    } catch (e) {
+      setInvestError(e.message || 'Investment failed. Please try again.');
+    } finally {
+      setInvestLoading(false);
+    }
+  };
+
+  const openInvestModal = () => {
+    setInvestSuccess(null);
+    setInvestError('');
+    setInvestAmount('');
+    setShowInvestModal(true);
+    // Refresh wallet on open
+    fetchWallet();
+  };
+
+  const closeInvestModal = () => {
+    setShowInvestModal(false);
+    setInvestSuccess(null);
   };
 
   return (
@@ -209,14 +262,24 @@ export default function StartupDetails() {
               </p>
             </div>
 
-            {/* Invest CTA */}
-            <button
-              className="btn btn-primary w-full"
-              style={{ marginTop: 'var(--space-6)', justifyContent: 'center' }}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add</span>
-              Express Interest
-            </button>
+            {/* Invest CTA — only for investors */}
+            {user?.role === 'investor' && (
+              <>
+                {/* Wallet balance preview */}
+                {walletBalance !== null && (
+                  <WalletWidget balance={walletBalance} compact />
+                )}
+                <button
+                  id="btn-invest-now"
+                  className="btn btn-primary w-full"
+                  style={{ marginTop: 'var(--space-4)', justifyContent: 'center' }}
+                  onClick={openInvestModal}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>account_balance_wallet</span>
+                  Invest Now
+                </button>
+              </>
+            )}
 
             <button className="btn btn-secondary w-full" style={{ marginTop: 'var(--space-3)', justifyContent: 'center' }}>
               Download Prospectus
@@ -272,6 +335,149 @@ export default function StartupDetails() {
                   Abstain
                 </button>
               </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Invest Modal ─────────────────────────────────────────── */}
+      {showInvestModal && (
+        <div className="modal-overlay" onClick={closeInvestModal}>
+          <div className="modal-content" style={{ maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
+
+            {/* Header */}
+            <div className="flex items-center gap-3" style={{ marginBottom: 'var(--space-5)' }}>
+              <span className="material-symbols-outlined" style={{ color: '#10b981', fontSize: '24px', fontVariationSettings: "'FILL' 1" }}>account_balance_wallet</span>
+              <h2 className="text-title" style={{ margin: 0 }}>Invest in {startup.name}</h2>
+            </div>
+
+            {investSuccess ? (
+              /* ── Success screen ── */
+              <div style={{ textAlign: 'center', padding: 'var(--space-4) 0' }}>
+                <div style={{ fontSize: '48px', marginBottom: 'var(--space-3)' }}>✅</div>
+                <h3 className="text-title" style={{ color: '#10b981', marginBottom: 'var(--space-2)' }}>
+                  Investment Confirmed!
+                </h3>
+                <p className="text-body-md text-secondary" style={{ marginBottom: 'var(--space-4)' }}>
+                  <strong style={{ color: 'var(--color-on-surface)' }}>₹{investSuccess.amount.toLocaleString('en-IN')}</strong> invested in {startup.name}
+                </p>
+
+                {/* Blockchain receipt */}
+                <div style={{
+                  background: 'rgba(16,185,129,0.06)',
+                  border: '1px solid rgba(16,185,129,0.2)',
+                  borderRadius: '10px',
+                  padding: '14px',
+                  textAlign: 'left',
+                  marginBottom: 'var(--space-4)',
+                }}>
+                  <p style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#10b981', margin: '0 0 8px' }}>⛓ Blockchain Receipt</p>
+                  {investSuccess.blockNumber !== undefined && (
+                    <p style={{ fontSize: '0.72rem', color: 'var(--color-text-meta, #9CA3AF)', margin: '0 0 4px' }}>
+                      Block #{investSuccess.blockNumber}
+                    </p>
+                  )}
+                  <p style={{ fontSize: '0.65rem', color: 'var(--color-text-meta, #9CA3AF)', wordBreak: 'break-all', margin: 0, fontFamily: 'monospace' }}>
+                    {investSuccess.blockHash || 'hash unavailable'}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2" style={{ justifyContent: 'center', marginBottom: 'var(--space-4)' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-meta, #9CA3AF)' }}>New balance:</span>
+                  <span style={{ fontWeight: 700, color: '#10b981' }}>₹{(investSuccess.newBalance ?? walletBalance)?.toLocaleString('en-IN')}</span>
+                </div>
+
+                <button className="btn btn-primary w-full" style={{ justifyContent: 'center' }} onClick={closeInvestModal}>
+                  Done
+                </button>
+              </div>
+            ) : (
+              /* ── Input screen ── */
+              <>
+                {/* Wallet balance */}
+                <WalletWidget balance={walletBalance} />
+
+                {/* Amount input */}
+                <div style={{ marginTop: 'var(--space-5)' }}>
+                  <label className="text-label-md" style={{ display: 'block', marginBottom: '8px', color: 'var(--color-on-surface)' }}>
+                    Investment Amount (₹)
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <span style={{
+                      position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
+                      color: 'var(--color-text-meta, #9CA3AF)', fontSize: '1rem', fontWeight: 600,
+                    }}>₹</span>
+                    <input
+                      id="invest-amount-input"
+                      type="number"
+                      min="1000"
+                      max={walletBalance ?? 100000}
+                      step="1000"
+                      placeholder="e.g. 10000"
+                      value={investAmount}
+                      onChange={e => setInvestAmount(e.target.value)}
+                      style={{
+                        width: '100%', padding: '12px 14px 12px 32px',
+                        background: 'rgba(255,255,255,0.05)',
+                        border: `1px solid ${investError ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.12)'}`,
+                        borderRadius: '8px', color: 'var(--color-on-surface, #E8EAED)',
+                        fontSize: '1.05rem', fontWeight: 600, outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                      onKeyDown={e => e.key === 'Enter' && handleInvest()}
+                    />
+                  </div>
+                  {/* Quick amount chips */}
+                  <div className="flex gap-2" style={{ marginTop: '8px', flexWrap: 'wrap' }}>
+                    {[5000, 10000, 25000, 50000].map(q => (
+                      <button
+                        key={q}
+                        className="chip chip--filter"
+                        style={{ cursor: 'pointer', fontSize: '0.65rem' }}
+                        onClick={() => setInvestAmount(String(q))}
+                      >
+                        ₹{q.toLocaleString('en-IN')}
+                      </button>
+                    ))}
+                  </div>
+                  {investError && (
+                    <p style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: '8px', margin: '8px 0 0' }}>
+                      {investError}
+                    </p>
+                  )}
+                </div>
+
+                {/* Info blurb */}
+                <p className="text-label-sm text-meta" style={{ marginTop: 'var(--space-3)' }}>
+                  This is a virtual investment using demo funds. No real money is involved. The transaction will be recorded on-chain.
+                </p>
+
+                {/* Actions */}
+                <div className="flex gap-3" style={{ marginTop: 'var(--space-5)' }}>
+                  <button
+                    id="btn-confirm-invest"
+                    className="btn btn-primary w-full"
+                    style={{ justifyContent: 'center' }}
+                    onClick={handleInvest}
+                    disabled={investLoading}
+                  >
+                    {investLoading ? (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '16px', animation: 'spin 1s linear infinite' }}>progress_activity</span>
+                        Processing…
+                      </span>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>check_circle</span>
+                        Confirm Investment
+                      </>
+                    )}
+                  </button>
+                  <button className="btn btn-secondary" onClick={closeInvestModal} disabled={investLoading}>
+                    Cancel
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </div>

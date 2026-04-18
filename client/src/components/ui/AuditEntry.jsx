@@ -1,19 +1,28 @@
-import { formatCurrency } from '../../utils/formatCurrency';
 import { formatDate } from '../../utils/formatDate';
 
 const TYPE_CONFIG = {
-  capital_release:    { label: 'Capital Release',     icon: 'call_made',      color: 'var(--color-on-tertiary-container)', bg: 'rgba(107,255,143,0.12)' },
-  funding_allocation: { label: 'Funding Allocation',  icon: 'account_balance', color: 'var(--color-primary-container)',     bg: 'rgba(30,41,59,0.1)' },
-  inter_account:      { label: 'Inter-Account Transfer', icon: 'swap_horiz',   color: '#F59E0B',                           bg: 'rgba(245,158,11,0.1)' },
+  capital_release:    { label: 'Capital Release',          icon: 'call_made',           color: 'var(--color-on-tertiary-container)', bg: 'rgba(107,255,143,0.12)' },
+  funding_allocation: { label: 'Funding Allocation',       icon: 'account_balance',     color: 'var(--color-primary-container)',     bg: 'rgba(30,41,59,0.1)' },
+  inter_account:      { label: 'Inter-Account Transfer',   icon: 'swap_horiz',          color: '#F59E0B',                            bg: 'rgba(245,158,11,0.1)' },
+  investment:         { label: 'Investment',               icon: 'trending_up',         color: '#10b981',                            bg: 'rgba(16,185,129,0.12)' },
+  milestone_complete: { label: 'Milestone',                icon: 'flag',                color: '#a78bfa',                            bg: 'rgba(167,139,250,0.12)' },
+  kyb_verified:       { label: 'KYB Verified',             icon: 'verified_user',       color: '#34d399',                            bg: 'rgba(52,211,153,0.12)' },
+  dao_vote:           { label: 'DAO Vote',                 icon: 'how_to_vote',         color: '#f87171',                            bg: 'rgba(248,113,113,0.12)' },
+};
+
+const formatINR = (amount) => {
+  if (!amount && amount !== 0) return '—';
+  return `₹${Number(amount).toLocaleString('en-IN')}`;
 };
 
 export default function AuditEntry({ entry, isOdd }) {
   const cfg = TYPE_CONFIG[entry.type] || TYPE_CONFIG.funding_allocation;
+  const shortHash = (h) => h ? `${h.slice(0, 8)}…${h.slice(-4)}` : '—';
 
   return (
     <tr style={{ background: isOdd ? 'var(--color-surface-container-lowest)' : 'var(--color-surface-container-low)' }}>
       {/* Block index */}
-      <td className="num" style={{ color: 'var(--color-outline)', width: '80px' }}>
+      <td className="num" style={{ color: 'var(--color-outline)', width: '70px' }}>
         #{entry.blockNumber}
       </td>
 
@@ -24,6 +33,7 @@ export default function AuditEntry({ entry, isOdd }) {
           padding: '3px 8px', borderRadius: '9999px',
           background: cfg.bg, color: cfg.color,
           fontSize: 'var(--font-size-label-sm)', fontWeight: 500,
+          whiteSpace: 'nowrap',
         }}>
           <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>{cfg.icon}</span>
           {cfg.label}
@@ -36,20 +46,37 @@ export default function AuditEntry({ entry, isOdd }) {
         <div style={{ fontSize: '0.6rem', color: 'var(--color-outline)' }}>→ {entry.toEntity}</div>
       </td>
 
-      {/* Amount */}
+      {/* Amount in ₹ */}
       <td className="num text-body-sm" style={{ fontWeight: 600 }}>
-        {formatCurrency(entry.amount)}
+        {entry.amount > 0 ? formatINR(entry.amount) : <span style={{ color: 'var(--color-outline)' }}>—</span>}
       </td>
 
-      {/* Hash */}
+      {/* Hash (own) */}
       <td>
-        <span style={{
+        <span title={entry.hash} style={{
           fontFamily: 'Courier New, monospace',
-          fontSize: '0.65rem',
+          fontSize: '0.62rem',
           color: 'var(--color-outline)',
           letterSpacing: '0.02em',
+          cursor: 'default',
         }}>
-          {entry.hash}
+          {shortHash(entry.hash)}
+        </span>
+      </td>
+
+      {/* Prev Hash — the chain link */}
+      <td>
+        <span title={entry.previousHash} style={{
+          fontFamily: 'Courier New, monospace',
+          fontSize: '0.6rem',
+          color: 'rgba(107,114,128,0.6)',
+          letterSpacing: '0.02em',
+          cursor: 'default',
+        }}>
+          {entry.previousHash?.startsWith('0000')
+            ? <span style={{ color: '#4ade80', fontSize: '0.6rem' }}>GENESIS</span>
+            : shortHash(entry.previousHash)
+          }
         </span>
       </td>
 
@@ -60,8 +87,8 @@ export default function AuditEntry({ entry, isOdd }) {
 
       {/* Status */}
       <td>
-        <span className="chip chip--success" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
-          confirmed
+        <span className={`chip chip--${entry.status === 'confirmed' ? 'success' : 'warn'}`} style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
+          {entry.status || 'confirmed'}
         </span>
       </td>
     </tr>

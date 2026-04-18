@@ -1,7 +1,7 @@
-const crypto = require('crypto');
 const Startup = require('../models/Startup');
+const User = require('../models/User');
 const FounderProfile = require('../models/FounderProfile');
-const AuditEntry = require('../models/AuditEntry');
+const { createBlock } = require('../utils/blockchain');
 const {
   sanitizeTeamMembersForStartup,
   sanitizeMilestonesForStartup,
@@ -171,8 +171,22 @@ exports.addExpense = catchAsync(async (req, res) => {
   const validCats = ['tech', 'marketing', 'operations', 'legal'];
   if (!validCats.includes(category)) return apiError(res, 400, 'Invalid expense category');
 
+  const expenseAmount = Number(amount);
+  if (!expenseAmount || expenseAmount <= 0) return apiError(res, 400, 'Invalid expense amount');
+
+  // Deduct from founder's virtual wallet
+  const updatedUser = await User.findOneAndUpdate(
+    { _id: req.user._id, walletBalance: { $gte: expenseAmount } },
+    { $inc: { walletBalance: -expenseAmount } },
+    { new: true }
+  );
+
+  if (!updatedUser) {
+    return apiError(res, 400, 'Insufficient wallet balance. Top-up your virtual wallet to continue.');
+  }
+
   // Add expense
-  startup.expenses.push({ category, amount, description, receiptUrl });
+  startup.expenses.push({ category, amount: expenseAmount, description, receiptUrl });
 
   // Recalculate actual allocation for this category
   const catTotal = startup.expenses
@@ -184,24 +198,16 @@ exports.addExpense = catchAsync(async (req, res) => {
   // Check variance — flag if >20% deviation
   const newAlerts = startup.checkVariance();
 
-  // Write immutable audit entry
-  const lastEntry = await AuditEntry.findOne().sort({ blockNumber: -1 }).lean();
-  const blockNumber = (lastEntry?.blockNumber || 0) + 1;
-  const previousHash = lastEntry?.hash || '0000000000000000';
-  const payload = `${blockNumber}${category}${amount}${Date.now()}`;
-  const hash = crypto.createHash('sha256').update(payload).digest('hex');
-
-  await AuditEntry.create({
-    blockNumber,
-    type: 'funding_allocation',
-    fromEntity: req.user.name || req.user.email,
-    toEntity: startup.name,
+  // Write canonical blockchain block
+  await createBlock({
+    type:        'funding_allocation',
+    fromEntity:  req.user.name || req.user.email,
+    toEntity:    startup.name,
     amount,
-    hash,
-    previousHash,
-    startup: startup._id,
+    currency:    'INR',
+    metadata:    { category, description },
+    startupId:   startup._id,
     initiatedBy: req.user._id,
-    metadata: { category, description },
   });
 
   await startup.save();
@@ -281,17 +287,16 @@ exports.submitMilestoneProof = catchAsync(async (req, res) => {
   m.voteResult = 'pending';
   m.votes = [];
 
-  // Audit entry for submission
-  const lastEntry = await AuditEntry.findOne().sort({ blockNumber: -1 }).lean();
-  const blockNumber = (lastEntry?.blockNumber || 0) + 1;
-  const previousHash = lastEntry?.hash || '0000000000000000';
-  const payload = `${blockNumber}milestone_submit${m._id}${Date.now()}`;
-  const hash = crypto.createHash('sha256').update(payload).digest('hex');
-  await AuditEntry.create({
-    blockNumber, type: 'milestone_complete',
-    fromEntity: startup.name, toEntity: 'Investor Pool',
-    hash, previousHash, startup: startup._id, initiatedBy: req.user._id,
-    metadata: { milestoneId: m._id, title: m.title },
+  // Canonical blockchain block for milestone submission
+  await createBlock({
+    type:        'milestone_complete',
+    fromEntity:  startup.name,
+    toEntity:    'Investor Pool',
+    amount:      0,
+    currency:    'INR',
+    metadata:    { milestoneId: m._id.toString(), title: m.title },
+    startupId:   startup._id,
+    initiatedBy: req.user._id,
   });
 
   await startup.save();

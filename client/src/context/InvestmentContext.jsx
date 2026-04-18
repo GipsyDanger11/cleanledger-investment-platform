@@ -30,6 +30,7 @@ export function InvestmentProvider({ children }) {
   const [auditEntries,  setAuditEntries]  = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [dashboardData, setDashboardData] = useState(null);
+  const [walletBalance, setWalletBalance] = useState(null);   // ₹ virtual wallet
   const [loading,       setLoading]       = useState(false);
   const [error,         setError]         = useState(null);
 
@@ -76,6 +77,52 @@ export function InvestmentProvider({ children }) {
     } catch (e) {
       console.error('fetchInvestments:', e.message);
     }
+  }, [tok]);
+
+  // ── Fetch: wallet balance ──────────────────────────────────
+  const fetchWallet = useCallback(async () => {
+    try {
+      const data = await api('GET', '/investments/wallet', null, tok());
+      setWalletBalance(data.data?.walletBalance ?? null);
+      return data.data;
+    } catch (e) {
+      console.error('fetchWallet:', e.message);
+      return null;
+    }
+  }, [tok]);
+
+  // ── Action: top-up virtual wallet ──────────────────────────
+  const topUpWallet = useCallback(async (amount) => {
+    const data = await api('POST', '/investments/wallet/topup', { amount }, tok());
+    if (data?.data?.walletBalance !== undefined) {
+      setWalletBalance(data.data.walletBalance);
+    }
+    return data;
+  }, [tok]);
+
+  // ── Action: invest in a startup (deducts virtual wallet) ──
+  const invest = useCallback(async (startupId, amount, trancheTag) => {
+    const data = await api('POST', '/investments', { startupId, amount, trancheTag }, tok());
+    // Optimistically update wallet balance and investments list
+    if (data?.data?.walletBalance !== undefined) {
+      setWalletBalance(data.data.walletBalance);
+    }
+    if (data?.data?.investment) {
+      setInvestments(prev => [data.data.investment, ...prev]);
+    }
+    return data;
+  }, [tok]);
+
+  // ── Action: verify SHA-256 chain integrity ─────────────────
+  const verifyChainIntegrity = useCallback(async () => {
+    const data = await api('GET', '/audit/verify', null, tok());
+    return data.data;
+  }, [tok]);
+
+  // ── Action: simulate tamper (demo) ─────────────────────────
+  const simulateTamper = useCallback(async (blockNumber) => {
+    const data = await api('POST', '/audit/simulate-tamper', { blockNumber }, tok());
+    return data;
   }, [tok]);
 
   // ── Fetch: audit trail ─────────────────────────────────────
@@ -208,7 +255,7 @@ export function InvestmentProvider({ children }) {
     if (!isAuthenticated || !tok()) {
       // Reset on logout
       setStartups([]); setMyStartup(null); setInvestments([]); setAuditEntries([]);
-      setNotifications([]); setDashboardData(null);
+      setNotifications([]); setDashboardData(null); setWalletBalance(null);
       fetchedRef.current = false;
       return;
     }
@@ -224,7 +271,7 @@ export function InvestmentProvider({ children }) {
           fetchStartups(),
           fetchDashboard(),
           fetchNotifications(),
-          // Only load investments for investors (startup role doesn't have them)
+          fetchWallet(), // both startup and investors need it
           user?.role !== 'startup' ? fetchInvestments() : Promise.resolve(),
           user?.role === 'startup' ? fetchMyStartup() : Promise.resolve(),
         ]);
@@ -260,6 +307,7 @@ export function InvestmentProvider({ children }) {
     auditEntries,
     notifications,
     dashboardData,
+    walletBalance,
     loading,
     error,
 
@@ -284,11 +332,16 @@ export function InvestmentProvider({ children }) {
     fetchQA,
     fetchAnnouncements,
     fetchMilestoneComments,
+    fetchWallet,
 
     // Action functions (write to DB)
+    topUpWallet,
     castVote,
     submitMilestoneProof,
     addExpense,
+    invest,
+    verifyChainIntegrity,
+    simulateTamper,
     askQuestion,
     answerQuestion,
     postAnnouncement,
