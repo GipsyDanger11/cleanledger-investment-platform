@@ -23,7 +23,7 @@ html {
 body {
   font-family: var(--font-family);
   font-size: var(--font-size-body-md);
-  color: var(--color-on-surface);
+  color: #111111;
   background: var(--color-background);
   line-height: 1.5;
   min-height: 100vh;
@@ -47,7 +47,7 @@ button, input, select, textarea {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  color: var(--color-on-surface);
+  color: #111111;
 }
 
 /* Material Symbols config */

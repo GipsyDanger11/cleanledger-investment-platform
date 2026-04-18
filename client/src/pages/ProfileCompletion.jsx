@@ -17,8 +17,19 @@ const SECTORS    = ['Technology','Healthcare','Education','Agriculture','Finance
 const TIMELINES  = ['6 months','12 months','18 months','24 months'];
 
 export default function ProfileCompletion() {
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const navigate = useNavigate();
+  useEffect(() => {
+    if (!user) return;
+    if (user.role === 'admin') {
+      navigate('/admin', { replace: true });
+      return;
+    }
+    if (user.profileComplete) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+
 
   const [step, setStep] = useState(1);
   const [score, setScore] = useState(0);
@@ -114,6 +125,7 @@ export default function ProfileCompletion() {
             tranchePct: Number(m.tranchePct),
           }).catch(() => {}); // May already exist
         }
+        updateProfile({ profileComplete: true, profileCompletionScore: Math.max(score, 70) });
         setSaving(false);
         navigate('/dashboard');
         return;

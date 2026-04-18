@@ -210,12 +210,18 @@ export default function AuthPage() {
   const [companyName, setCompanyName] = useState('');
   const [sector, setSector] = useState('');
 
-  const { login: authLogin, register: authRegister, isAuthenticated } = useAuth();
+  const { user, login: authLogin, register: authRegister, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
+  const getPostAuthRoute = (u) => {
+    if (!u) return '/dashboard';
+    if (u.role === 'admin') return '/admin';
+    return u.profileComplete ? '/dashboard' : '/profile-setup';
+  };
+
   useEffect(() => {
-    if (isAuthenticated) navigate('/profile-setup');
-  }, [isAuthenticated, navigate]);
+    if (isAuthenticated && user) navigate(getPostAuthRoute(user), { replace: true });
+  }, [isAuthenticated, user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -224,7 +230,8 @@ export default function AuthPage() {
 
     try {
       if (mode === 'login') {
-        await authLogin(email, password);
+        const loggedInUser = await authLogin(email, password);
+        navigate(getPostAuthRoute(loggedInUser), { replace: true });
       } else {
         if (password !== confirmPassword) {
           setError('Passwords do not match.');
@@ -243,9 +250,9 @@ export default function AuthPage() {
           role,
           ...(role === 'startup' ? { companyName, sector } : {}),
         };
-        await authRegister(formData);
+        const createdUser = await authRegister(formData);
+        navigate(getPostAuthRoute(createdUser), { replace: true });
       }
-      navigate('/profile-setup');
     } catch (err) {
       setError(err.message || 'Something went wrong.');
     } finally {
@@ -258,12 +265,13 @@ export default function AuthPage() {
     setLoading(true);
     try {
       if (action === 'login') {
-        await authLogin(vEmail, vPassword);
+        const loggedInUser = await authLogin(vEmail, vPassword);
+        navigate(getPostAuthRoute(loggedInUser), { replace: true });
       } else {
-        await authRegister({ name: vName, email: vEmail, password: vPassword, role: vRole || 'investor' });
+        const createdUser = await authRegister({ name: vName, email: vEmail, password: vPassword, role: vRole || 'investor' });
+        navigate(getPostAuthRoute(createdUser), { replace: true });
       }
       setShowVoice(false);
-      navigate('/profile-setup');
     } catch (err) {
       setError(err.message || 'Voice authentication failed.');
       setShowVoice(false);
@@ -324,31 +332,6 @@ export default function AuthPage() {
             <div className="auth-error">
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>error</span>
               {error}
-            </div>
-          )}
-
-          {/* ── ROLE-SELECTION CARDS (signup mode) ── */}
-          {mode === 'signup' && (
-            <div className="auth-role-picker">
-              <p className="auth-role-picker__label">I am registering as a…</p>
-              <div className="auth-role-picker__cards">
-                <button
-                  className={`auth-role-card ${role === 'investor' ? 'auth-role-card--active' : ''}`}
-                  onClick={() => setRole('investor')}
-                >
-                  <span className="material-symbols-outlined auth-role-card__icon" style={{ color: '#4F46E5' }}>account_balance_wallet</span>
-                  <span className="auth-role-card__label">Investor</span>
-                  <span className="auth-role-card__sub">Fund verified startups</span>
-                </button>
-                <button
-                  className={`auth-role-card ${role === 'startup' ? 'auth-role-card--active' : ''}`}
-                  onClick={() => setRole('startup')}
-                >
-                  <span className="material-symbols-outlined auth-role-card__icon" style={{ color: '#7C3AED' }}>rocket_launch</span>
-                  <span className="auth-role-card__label">Startup / Founder</span>
-                  <span className="auth-role-card__sub">Raise capital transparently</span>
-                </button>
-              </div>
             </div>
           )}
 

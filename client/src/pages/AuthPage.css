@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #E3F2FD 0%, #FFFFFF 50%, #F5F7FA 100%);
+  background: #FFFFFF;
   position: relative;
   overflow: hidden;
   font-family: 'Inter', sans-serif;
@@ -19,9 +19,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(25, 118, 210, 0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 80% 100%, rgba(25, 118, 210, 0.04) 0%, transparent 50%);
+  background: none;
   pointer-events: none;
 }
 
@@ -29,10 +27,7 @@
 .auth-page__grid {
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(rgba(25, 118, 210, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(25, 118, 210, 0.03) 1px, transparent 1px);
-  background-size: 60px 60px;
+  background: none;
   pointer-events: none;
   opacity: 0.5;
 }
@@ -42,7 +37,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  overflow: hidden;
+  display: none;
 }
 
 .auth-page__particle {

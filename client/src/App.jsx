@@ -32,6 +32,14 @@ function RequireRole({ children, allowedRoles }) {
   return children;
 }
 
+function ProfileSetupRoute() {
+  const { user, isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/auth" replace />;
+  if (user?.role === 'admin') return <Navigate to="/admin" replace />;
+  if (user?.profileComplete) return <Navigate to="/dashboard" replace />;
+  return <ProfileCompletion />;
+}
+
 export default function App() {
   return (
     <AuthProvider>
@@ -41,7 +49,7 @@ export default function App() {
             {/* ── Public ── */}
             <Route path="/"              element={<LandingPage />} />
             <Route path="/auth"          element={<AuthPage />} />
-            <Route path="/profile-setup" element={<ProfileCompletion />} />
+            <Route path="/profile-setup" element={<ProfileSetupRoute />} />
             <Route path="/access-denied" element={<AccessDenied />} />
 
             {/* ── Separate registration wizards ── */}

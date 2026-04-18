@@ -10,10 +10,7 @@
   display: flex;
   align-items: center;
   padding-top: 80px;
-  background:
-    radial-gradient(ellipse 60% 80% at 110% 40%, rgba(25, 118, 210, 0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 80% 60% at -10% 60%, rgba(21, 101, 192, 0.06) 0%, transparent 60%),
-    linear-gradient(180deg, #1565C0 0%, #1976D2 35%, #1E88E5 70%, #FFFFFF 100%);
+  background: #FFFFFF;
   position: relative;
   overflow: hidden;
 }
@@ -23,10 +20,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
-  background-size: 60px 60px;
+  background: none;
   pointer-events: none;
 }
 
@@ -44,7 +38,7 @@
 }
 
 .landing__hero-title {
-  color: #FFFFFF;
+  color: #111111;
   margin-bottom: var(--space-6);
   line-height: 1.1;
   font-size: clamp(2rem, 4vw, 3.2rem);
@@ -53,14 +47,14 @@
 }
 
 .landing__hero-accent {
-  background: linear-gradient(135deg, #BBDEFB 0%, #E3F2FD 100%);
+  background: linear-gradient(135deg, #1565C0 0%, #1976D2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .landing__hero-sub {
-  color: rgba(255,255,255,0.8);
+  color: #111111;
   max-width: 52ch;
   margin-bottom: var(--space-8);
   line-height: 1.7;
@@ -75,25 +69,25 @@
 .landing__cta-primary {
   padding: var(--space-3) var(--space-6);
   font-size: var(--font-size-body-md);
-  background: #FFFFFF;
-  color: #1565C0;
+  background: #1565C0;
+  color: #FFFFFF;
   font-weight: 600;
 }
 
 .landing__cta-primary:hover {
-  background: #F5F5F5;
+  background: #0D47A1;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .landing__cta-secondary {
-  background: rgba(255,255,255,0.15);
-  border-color: rgba(255,255,255,0.3);
-  color: #FFFFFF;
+  background: #FFFFFF;
+  border-color: #1565C0;
+  color: #1565C0;
 }
 
 .landing__cta-secondary:hover {
-  background: rgba(255,255,255,0.25);
-  border-color: rgba(255,255,255,0.5);
+  background: #E3F2FD;
+  border-color: #1565C0;
 }
 
 /* Ledger Card */
@@ -118,9 +112,8 @@
   gap: var(--space-4);
   position: relative;
   z-index: 1;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: #FFFFFF;
+  border: 1px solid #E0E0E0;
   border-radius: var(--border-radius-container);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
@@ -150,18 +143,18 @@
   justify-content: space-between;
   align-items: flex-start;
   padding: var(--space-3) var(--space-4);
-  background: rgba(255,255,255,0.1);
+  background: #F5F7FA;
   border-radius: var(--border-radius-container);
-  border: 1px solid rgba(255,255,255,0.15);
+  border: 1px solid #E0E0E0;
   transition: background 150ms ease;
 }
 
 .ledger-card__entry:hover {
-  background: rgba(255,255,255,0.2);
+  background: #E3F2FD;
 }
 
 .ledger-card__hash {
-  color: rgba(255,255,255,0.5);
+  color: #111111;
   font-family: 'Courier New', monospace;
   font-size: 0.65rem;
   letter-spacing: 0.04em;
@@ -171,7 +164,7 @@
 
 /* LIVE TICKER */
 .landing__ticker {
-  background: #0D47A1;
+  background: #1565C0;
   overflow: hidden;
   height: 36px;
   display: flex;
@@ -191,11 +184,11 @@
   align-items: center;
   gap: var(--space-3);
   padding: 0 var(--space-6);
-  color: rgba(255, 255, 255, 0.7);
+  color: #FFFFFF;
 }
 
 .landing__ticker-sep {
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 /* STATS */
@@ -352,7 +345,7 @@
 
 /* FOOTER */
 .landing__footer {
-  background: #1565C0;
+  background: #FFFFFF;
   padding: var(--space-8) 0;
 }
 
@@ -376,7 +369,7 @@
 .landing__footer-logo-mark {
   width: 28px;
   height: 28px;
-  background: rgba(255, 255, 255, 0.2);
+  background: #1565C0;
   border-radius: 4px;
   display: flex;
   align-items: center;
@@ -393,12 +386,12 @@
 
 .landing__footer-links a {
   text-decoration: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: #111111;
   transition: color 150ms ease;
 }
 
 .landing__footer-links a:hover {
-  color: #FFFFFF !important;
+  color: #1565C0 !important;
 }
 
 /* ══════════════════════════════════════════════════════════

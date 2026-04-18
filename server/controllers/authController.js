@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Startup = require('../models/Startup');
 const generateToken = require('../utils/generateToken');
 
 const register = async (req, res, next) => {
@@ -61,6 +62,21 @@ const login = async (req, res, next) => {
     user.calculateProfileScore();
     await user.save();
 
+    let effectiveProfileComplete = user.profileComplete;
+    let effectiveProfileCompletionScore = user.profileCompletionScore;
+
+    // Startup users complete profile through Startup profile wizard.
+    if (user.role === 'startup') {
+      const startupProfile = await Startup.findOne({ createdBy: user._id })
+        .select('profileCompletionScore')
+        .lean();
+      if (startupProfile) {
+        const startupScore = startupProfile.profileCompletionScore || 0;
+        effectiveProfileCompletionScore = Math.max(effectiveProfileCompletionScore || 0, startupScore);
+        effectiveProfileComplete = startupScore >= 70;
+      }
+    }
+
     const token = generateToken(user._id, user.role);
     res.json({
       success: true,
@@ -73,8 +89,8 @@ const login = async (req, res, next) => {
         organization: user.organization,
         entityType: user.entityType,
         kyc: user.kyc,
-        profileComplete: user.profileComplete,
-        profileCompletionScore: user.profileCompletionScore,
+        profileComplete: effectiveProfileComplete,
+        profileCompletionScore: effectiveProfileCompletionScore,
       },
     });
   } catch (err) {

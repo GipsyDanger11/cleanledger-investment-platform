@@ -36,7 +36,7 @@
 
   /* ── Text (Black-based) ── */
   --color-on-surface:         #111111;  /* Primary text - black */
-  --color-on-surface-variant: #555555;  /* Secondary text */
+  --color-on-surface-variant: #111111;  /* Secondary text (project-wide black) */
   --color-on-background:      #111111;
   --color-background:         #FFFFFF;
 

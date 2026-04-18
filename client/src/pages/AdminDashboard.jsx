@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './admin.css';
 
@@ -20,7 +21,8 @@ const MOCK_USERS = [
 ];
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [error, setError] = useState(null);
@@ -57,8 +59,27 @@ const AdminDashboard = () => {
     { icon: '🏦', value: stats.activeInvestors || 28, label: 'Active Investors' },
   ];
 
+  const handleLogout = async () => {
+    await logout();
+    navigate('/auth', { replace: true });
+  };
+
   return (
     <div className="admin-dash">
+      <header className="admin-nav">
+        <div className="admin-nav__brand">
+          <span className="admin-nav__logo">CL</span>
+          <span className="admin-nav__title">CleanLedger Admin</span>
+        </div>
+        <div className="admin-nav__actions">
+          <span className="admin-nav__user">{user?.name || 'Admin'}</span>
+          <button className="admin-nav__logout" onClick={handleLogout}>
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>logout</span>
+            Log Out
+          </button>
+        </div>
+      </header>
+
       <div className="admin-dash__header">
         <h1 className="admin-dash__title">Admin Control Panel</h1>
         <span className="admin-dash__badge">⚡ {user?.name || 'Admin'}</span>
