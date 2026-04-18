@@ -4,6 +4,38 @@ import Header from '../components/layout/Header';
 import { useAuth } from '../context/AuthContext';
 import './LandingPage.css';
 
+const PROBLEM_POINTS = [
+  { icon: 'visibility_off',   text: 'Opaque fund flows — investors have no real-time visibility into where capital goes after disbursement.' },
+  { icon: 'assignment_late',  text: 'Manual milestone verification — progress is tracked via PDFs and email threads, with no cryptographic audit trail.' },
+  { icon: 'group_off',        text: 'Fractured governance — single GPs exercise discretionary release authority with no DAO accountability.' },
+  { icon: 'policy',           text: 'Compliance friction — regulatory reporting requires bespoke reconciliations across disconnected spreadsheets.' },
+  { icon: 'trending_down',    text: 'Trust deficit — LPs lack verifiable assurance that ESG claims and KYB documents are authentic.' },
+];
+
+const MANDATORY_FEATURES = [
+  { icon: 'account_balance',  title: 'Multi-Party Investment Workflow',    desc: 'Startup registration, LP onboarding, DAO formation, and milestone-gated fund release.' },
+  { icon: 'lock',             title: 'Immutable Audit Trail',              desc: 'Every transaction hash-chained (SHA-256) and tamper-evident on an append-only ledger.' },
+  { icon: 'how_to_vote',      title: 'DAO Consensus Voting',               desc: 'Fund tranches disburse only after quorum-based member approval — no single point of control.' },
+  { icon: 'verified_user',    title: 'KYB / ESG Verification Gate',        desc: 'Startups must pass identity, incorporation, and ESG framework checks before funding access.' },
+  { icon: 'trending_up',      title: 'Trust Score Engine',                 desc: 'Composite risk scoring across KYB status, milestone velocity, and LP sentiment data.' },
+  { icon: 'shield',           title: 'Role-Based Access Control',          desc: 'Granular permissions for Founders, LPs, GPs, Auditors, and Regulators.' },
+];
+
+const NICE_TO_HAVE = [
+  { icon: 'auto_graph',       title: 'Predictive Risk Analytics',  desc: 'ML-powered models that forecast startup default probability from ledger patterns.' },
+  { icon: 'receipt_long',     title: 'Regulatory Export Suite',    desc: 'One-click SEBI/SEC-ready PDF and CSV reports with cryptographic attestation.' },
+  { icon: 'token',            title: 'Tokenised LP Shares',        desc: 'ERC-20 fractional ownership enabling secondary-market liquidity for LP positions.' },
+  { icon: 'translate',        title: 'Multi-Jurisdiction Support', desc: 'Configurable compliance rulesets for different regulatory frameworks globally.' },
+];
+
+const HOW_IT_WORKS_STEPS = [
+  { step: '01', icon: 'how_to_reg',      title: 'Startup & LP Onboarding',   desc: 'Founders submit KYB docs; LPs complete identity verification. Both receive cryptographic credentials.' },
+  { step: '02', icon: 'gavel',           title: 'DAO Formation & Governance', desc: 'A DAO is formed per fund. Voting weights are set; governance rules are anchored on-chain.' },
+  { step: '03', icon: 'task_alt',        title: 'Milestone Submission',       desc: 'Startups upload milestone evidence. Auditors verify; hashes are written to the immutable ledger.' },
+  { step: '04', icon: 'how_to_vote',     title: 'DAO Vote & Fund Release',    desc: 'On milestone approval, DAO members vote. Quorum met → escrow releases the next capital tranche.' },
+  { step: '05', icon: 'analytics',       title: 'Live Portfolio Monitoring',  desc: 'LPs track trust scores, allocation breakdowns, and audit history from their real-time dashboard.' },
+];
+
 const LEDGER_EVENTS = [
   { type: 'Capital Release',     amount: '$800,000',   entity: 'Aura Wind Energy',        time: '2s ago'  },
   { type: 'Funding Allocation',  amount: '$500,000',   entity: 'Whitfield Capital',        time: '14s ago' },
@@ -28,6 +60,15 @@ export default function LandingPage() {
   useEffect(() => {
     if (isAuthenticated) navigate('/dashboard');
   }, [isAuthenticated, navigate]);
+
+  // SEO meta tags
+  useEffect(() => {
+    document.title = 'CleanLedger — Transparent Investment Platform for Private Markets';
+    let meta = document.querySelector('meta[name="description"]');
+    if (!meta) { meta = document.createElement('meta'); meta.name = 'description'; document.head.appendChild(meta); }
+    meta.content = 'CleanLedger is a blockchain-anchored, DAO-governed investment platform offering immutable audit trails, KYB verification, milestone-gated fund release, and zero-knowledge proofs for private market capital.';
+    return () => { document.title = 'CleanLedger'; };
+  }, []);
 
   // Animate ticker
   useEffect(() => {
@@ -237,6 +278,124 @@ export default function LandingPage() {
                 <span className="text-label-md tabular" style={{ width: '80px', textAlign: 'right', color: 'var(--color-on-surface)', fontWeight: 600 }}>{row.amount}</span>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PROBLEM STATEMENT ─────────────────────────── */}
+      <section className="landing__problem" id="problem" aria-labelledby="problem-heading">
+        <div className="landing__section-inner">
+          <div className="chip chip--filter landing__section-chip">Problem Statement</div>
+          <h2 id="problem-heading" className="text-headline landing__section-title" style={{ marginTop: 'var(--space-4)' }}>
+            Private market investment suffers from<br />
+            <span className="landing__hero-accent">opacity, fragmentation, and unverifiable claims.</span>
+          </h2>
+          <p className="text-body-md text-secondary" style={{ maxWidth: '60ch', marginTop: 'var(--space-4)', marginBottom: 'var(--space-10)' }}>
+            Today's institutional investment workflows rely on trust in intermediaries, manual reporting,
+            and disconnected data silos. CleanLedger replaces this with cryptographic guarantees.
+          </p>
+          <div className="landing__problem-list">
+            {PROBLEM_POINTS.map((p, i) => (
+              <div key={i} className="landing__problem-item">
+                <div className="landing__problem-icon">
+                  <span className="material-symbols-outlined">{p.icon}</span>
+                </div>
+                <p className="text-body-md" style={{ lineHeight: '1.65' }}>{p.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── REQUIREMENTS ──────────────────────────────── */}
+      <section className="landing__requirements" id="requirements" aria-labelledby="req-heading">
+        <div className="landing__section-inner">
+          <div className="chip chip--success landing__section-chip">
+            <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>checklist</span>
+            Platform Requirements
+          </div>
+          <h2 id="req-heading" className="text-headline landing__section-title" style={{ marginTop: 'var(--space-4)' }}>
+            What CleanLedger delivers — mandated and beyond.
+          </h2>
+
+          <div className="landing__req-group" style={{ marginTop: 'var(--space-10)' }}>
+            <div className="landing__req-group-label">
+              <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-tertiary-fixed)' }}>verified</span>
+              Mandatory Features
+            </div>
+            <div className="landing__req-grid">
+              {MANDATORY_FEATURES.map((f) => (
+                <div key={f.title} className="landing__req-card card">
+                  <div className="landing__req-icon landing__req-icon--mandatory">
+                    <span className="material-symbols-outlined">{f.icon}</span>
+                  </div>
+                  <h3 className="text-title" style={{ marginTop: 'var(--space-3)' }}>{f.title}</h3>
+                  <p className="text-body-sm text-secondary" style={{ marginTop: 'var(--space-2)' }}>{f.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="landing__req-group" style={{ marginTop: 'var(--space-10)' }}>
+            <div className="landing__req-group-label">
+              <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#A8C7FA' }}>star</span>
+              Nice-to-Have Features
+            </div>
+            <div className="landing__req-grid landing__req-grid--nice">
+              {NICE_TO_HAVE.map((f) => (
+                <div key={f.title} className="landing__req-card landing__req-card--nice card">
+                  <div className="landing__req-icon landing__req-icon--nice">
+                    <span className="material-symbols-outlined">{f.icon}</span>
+                  </div>
+                  <h3 className="text-title" style={{ marginTop: 'var(--space-3)' }}>{f.title}</h3>
+                  <p className="text-body-sm text-secondary" style={{ marginTop: 'var(--space-2)' }}>{f.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ──────────────────────────────── */}
+      <section className="landing__hiw" id="how-it-works" aria-labelledby="hiw-heading">
+        <div className="landing__section-inner">
+          <div className="landing__hiw-layout">
+            {/* Left: Steps */}
+            <div className="landing__hiw-steps">
+              <div className="chip chip--filter landing__section-chip">How It Works</div>
+              <h2 id="hiw-heading" className="text-headline landing__section-title" style={{ marginTop: 'var(--space-4)', marginBottom: 'var(--space-8)' }}>
+                Five steps from onboarding<br />to transparent capital release.
+              </h2>
+              {HOW_IT_WORKS_STEPS.map((s, i) => (
+                <div key={s.step} className="landing__hiw-step">
+                  <div className="landing__hiw-step-left">
+                    <div className="landing__hiw-step-num">{s.step}</div>
+                    {i < HOW_IT_WORKS_STEPS.length - 1 && <div className="landing__hiw-step-line" />}
+                  </div>
+                  <div className="landing__hiw-step-content">
+                    <div className="landing__hiw-step-header">
+                      <span className="material-symbols-outlined landing__hiw-step-icon">{s.icon}</span>
+                      <h3 className="text-title">{s.title}</h3>
+                    </div>
+                    <p className="text-body-sm text-secondary" style={{ marginTop: 'var(--space-2)', lineHeight: '1.65' }}>{s.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Right: Illustration */}
+            <div className="landing__hiw-visual">
+              <div className="landing__hiw-img-wrap animate-float">
+                <img
+                  src="/hero-platform.png"
+                  alt="CleanLedger platform architecture — blockchain nodes, audit trail and DAO governance visualization"
+                  className="landing__hiw-img"
+                  loading="lazy"
+                  width="600"
+                  height="500"
+                />
+                <div className="landing__hiw-img-glow" />
+              </div>
+            </div>
           </div>
         </div>
       </section>
