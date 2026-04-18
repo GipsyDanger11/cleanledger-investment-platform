@@ -89,10 +89,13 @@ const startupSchema = new mongoose.Schema(
     teamSize:    { type: Number, min: 0 },
 
     // ── R1 — Verified Profile
-    incorporationProofUrl: String,
-    businessPlanUrl:       String,
-    businessPlanSummary:   String,
-    pitchDeckUrl:          String,
+    verificationDocuments: {
+      businessRegistrationUrl: String,
+      gstNumberUrl:          String,
+      founderIdUrl:          String,
+      pitchDeckUrl:          String,
+      bankStatementUrl:      String
+    },
     teamMembers:           [teamMemberSchema],
     profileCompletionScore:{ type: Number, default: 0, min: 0, max: 100 },
     verificationStatus: {
@@ -165,14 +168,21 @@ startupSchema.methods.calculateProfileScore = function () {
   if (this.sector) score += 5;
   if (this.geography) score += 5;
   if (this.description && this.description.length > 50) score += 10;
-  if (this.incorporationProofUrl) score += 15;
-  if (this.businessPlanUrl || this.businessPlanSummary) score += 15;
+  
   if (this.teamMembers && this.teamMembers.length >= 2) score += 10;
   if (this.milestones && this.milestones.length >= 3) score += 15;
   const alloc = this.fundAllocation;
   const totalPlanned = (alloc.tech.planned + alloc.marketing.planned +
                         alloc.operations.planned + alloc.legal.planned);
   if (totalPlanned > 0) score += 10;
+
+  if (this.verificationStatus === 'verified') {
+    if (this.verificationDocuments?.businessRegistrationUrl) score += 10;
+    if (this.verificationDocuments?.pitchDeckUrl) score += 10;
+    if (this.verificationDocuments?.bankStatementUrl) score += 5;
+    if (this.verificationDocuments?.founderIdUrl) score += 5;
+  }
+
   this.profileCompletionScore = Math.min(score, 100);
   return this.profileCompletionScore;
 };

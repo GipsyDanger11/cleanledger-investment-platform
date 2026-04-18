@@ -91,12 +91,18 @@ exports.updateStartup = catchAsync(async (req, res) => {
     'name', 'category', 'sector', 'geography', 'description', 'tags', 'website',
     'registrationNumber',
     'teamSize',
-    'incorporationProofUrl', 'businessPlanUrl', 'businessPlanSummary',
-    'pitchDeckUrl', 'fundingTarget', 'fundingTimeline',
+    'verificationDocuments', 'fundingTarget', 'fundingTimeline',
     'fundAllocation', 'verificationStatus', 'documents',
   ];
   for (const key of allowed) {
     if (body[key] !== undefined) startup[key] = body[key];
+  }
+
+  // If any verification documents are added, switch status to in_review if it was unverified
+  if (body.verificationDocuments && Object.values(body.verificationDocuments).some(v => v !== null && v !== '')) {
+    if (startup.verificationStatus === 'unverified') {
+      startup.verificationStatus = 'in_review';
+    }
   }
   startup.calculateProfileScore();
   await startup.save();
@@ -137,17 +143,18 @@ exports.listStartups = catchAsync(async (req, res) => {
 });
 
 // ── R1: Admin — update verification status ───────────────
+// ── R1: Admin — update verification status ───────────────
 exports.updateVerificationStatus = catchAsync(async (req, res) => {
   const { status } = req.body;
   const valid = ['unverified', 'in_review', 'verified', 'rejected'];
   if (!valid.includes(status)) return apiError(res, 400, 'Invalid verification status');
 
-  const startup = await Startup.findByIdAndUpdate(
-    req.params.id,
-    { verificationStatus: status },
-    { new: true }
-  );
+  const startup = await Startup.findById(req.params.id);
   if (!startup) return apiError(res, 404, 'Startup not found');
+  
+  startup.verificationStatus = status;
+  startup.calculateProfileScore();
+  await startup.save();
   res.json({ success: true, data: startup });
 });
 

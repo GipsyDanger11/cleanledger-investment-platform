@@ -157,10 +157,20 @@ export default function StartupDetails() {
           <div>
             <div className="flex items-center gap-3" style={{ marginBottom: 'var(--space-2)' }}>
               <h1 className="text-headline" style={{ margin: 0 }}>{startup.name}</h1>
-              {startup.verificationStatus === 'verified' && (
+              {startup.verificationStatus === 'verified' ? (
                 <span className="chip chip--success">
                   <span className="material-symbols-outlined" style={{ fontSize: '12px', fontVariationSettings: "'FILL' 1" }}>verified</span>
-                  Verified Entity
+                  KYC Verified
+                </span>
+              ) : startup.verificationStatus === 'in_review' ? (
+                <span className="chip" style={{ background: '#FEF3C7', color: '#B45309', fontWeight: 600 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>pending_actions</span>
+                  Under Review
+                </span>
+              ) : (
+                <span className="chip" style={{ background: '#FEE2E2', color: '#B91C1C', fontWeight: 600 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>warning</span>
+                  Documents Pending
                 </span>
               )}
             </div>
@@ -327,28 +337,70 @@ export default function StartupDetails() {
           <div className="card">
             <h2 className="text-title" style={{ marginBottom: 'var(--space-4)' }}>Verification Documents</h2>
             <div className="startup-details__docs">
-              {startup.kybDocument && (
-                <div className="startup-details__doc">
+              {startup.verificationDocuments?.businessRegistrationUrl && (
+                <div className="startup-details__doc" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid var(--color-outline-variant)', borderRadius: '8px', marginBottom: '8px' }}>
                   <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>verified_user</span>
                     <div>
-                      <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>{startup.kybDocument}</p>
-                      <p className="text-label-sm text-meta" style={{ margin: 0 }}>Know Your Business</p>
+                      <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>Business Registration Certificate</p>
+                      <a href={startup.verificationDocuments.businessRegistrationUrl} target="_blank" rel="noopener noreferrer" className="text-label-sm text-primary" style={{ margin: 0, textDecoration: 'none' }}>View Document</a>
                     </div>
                   </div>
-                  <span className="chip chip--success" style={{ fontSize: '0.6rem' }}>✓ Verified</span>
+                  <span className="chip chip--success" style={{ fontSize: '0.6rem' }}>✓ Uploaded</span>
                 </div>
               )}
-              {startup.esgDocument && (
-                <div className="startup-details__doc">
+              {startup.verificationDocuments?.gstNumberUrl && (
+                <div className="startup-details__doc" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid var(--color-outline-variant)', borderRadius: '8px', marginBottom: '8px' }}>
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>eco</span>
+                    <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>receipt_long</span>
                     <div>
-                      <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>{startup.esgDocument}</p>
-                      <p className="text-label-sm text-meta" style={{ margin: 0 }}>Environmental, Social & Governance</p>
+                      <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>GST Number</p>
+                      <a href={startup.verificationDocuments.gstNumberUrl} target="_blank" rel="noopener noreferrer" className="text-label-sm text-primary" style={{ margin: 0, textDecoration: 'none' }}>View Document</a>
                     </div>
                   </div>
-                  <span className="chip chip--success" style={{ fontSize: '0.6rem' }}>✓ Verified</span>
+                  <span className="chip chip--success" style={{ fontSize: '0.6rem' }}>✓ Uploaded</span>
+                </div>
+              )}
+              {startup.verificationDocuments?.founderIdUrl && (
+                <div className="startup-details__doc" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid var(--color-outline-variant)', borderRadius: '8px', marginBottom: '8px' }}>
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>badge</span>
+                    <div>
+                      <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>Founder Aadhaar / PAN</p>
+                      <a href={startup.verificationDocuments.founderIdUrl} target="_blank" rel="noopener noreferrer" className="text-label-sm text-primary" style={{ margin: 0, textDecoration: 'none' }}>View Document</a>
+                    </div>
+                  </div>
+                  <span className="chip chip--success" style={{ fontSize: '0.6rem' }}>✓ Uploaded</span>
+                </div>
+              )}
+              {startup.verificationDocuments?.pitchDeckUrl && (
+                <div className="startup-details__doc" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid var(--color-outline-variant)', borderRadius: '8px', marginBottom: '8px' }}>
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>presentation</span>
+                    <div>
+                      <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>Pitch Deck</p>
+                      <a href={startup.verificationDocuments.pitchDeckUrl} target="_blank" rel="noopener noreferrer" className="text-label-sm text-primary" style={{ margin: 0, textDecoration: 'none' }}>View Document</a>
+                    </div>
+                  </div>
+                  <span className="chip chip--success" style={{ fontSize: '0.6rem' }}>✓ Uploaded</span>
+                </div>
+              )}
+              {startup.verificationDocuments?.bankStatementUrl && (
+                <div className="startup-details__doc" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid var(--color-outline-variant)', borderRadius: '8px', marginBottom: '8px' }}>
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>account_balance</span>
+                    <div>
+                      <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>Bank Statement</p>
+                      <a href={startup.verificationDocuments.bankStatementUrl} target="_blank" rel="noopener noreferrer" className="text-label-sm text-primary" style={{ margin: 0, textDecoration: 'none' }}>View Document</a>
+                    </div>
+                  </div>
+                  <span className="chip chip--success" style={{ fontSize: '0.6rem' }}>✓ Uploaded</span>
+                </div>
+              )}
+              {(!startup.verificationDocuments || Object.keys(startup.verificationDocuments).length === 0) && (
+                <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--color-secondary)' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '32px', opacity: 0.5, marginBottom: '8px' }}>folder_off</span>
+                  <p className="text-body-sm" style={{ margin: 0 }}>{startup.verificationStatus === 'verified' ? 'Documents protected & verified.' : 'No verification documents uploaded yet.'}</p>
                 </div>
               )}
             </div>
