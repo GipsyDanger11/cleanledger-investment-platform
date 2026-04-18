@@ -1,0 +1,66 @@
+/* ── Marketplace ───────────────────────────────────────────── */
+.marketplace {}
+
+/* Filters */
+.marketplace__filters {
+  margin-bottom: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.marketplace__search {
+  position: relative;
+}
+
+.marketplace__search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-outline);
+  font-size: 18px !important;
+  pointer-events: none;
+}
+
+.marketplace__search-input {
+  padding-left: 40px;
+}
+
+.marketplace__filter-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.marketplace__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Results meta */
+.marketplace__results-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+/* Grid */
+.marketplace__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-4);
+}
+
+/* Empty state */
+.marketplace__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-16);
+  text-align: center;
+}

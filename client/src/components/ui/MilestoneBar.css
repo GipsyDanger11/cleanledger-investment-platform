@@ -1,0 +1,89 @@
+/* ── Milestone Bar ─────────────────────────────────────────── */
+.milestone-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.milestone-phase {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  position: relative;
+  padding: var(--space-4) 0;
+}
+
+/* Vertical connector */
+.milestone-phase__connector {
+  position: absolute;
+  left: 15px;
+  top: -16px;
+  width: 2px;
+  height: 20px;
+  background: var(--color-outline-variant);
+}
+
+.milestone-phase__connector--done {
+  background: var(--color-tertiary-fixed);
+}
+
+/* Icon */
+.milestone-phase__icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--color-surface-container-high);
+}
+
+.milestone-phase__icon {
+  font-size: 18px !important;
+}
+
+.milestone--complete  .milestone-phase__icon-wrap { background: rgba(107,255,143,0.2); }
+.milestone--complete  .milestone-phase__icon { color: var(--color-on-tertiary-container); font-variation-settings: 'FILL' 1;}
+.milestone--progress  .milestone-phase__icon-wrap { background: rgba(245,158,11,0.12); }
+.milestone--progress  .milestone-phase__icon { color: #F59E0B; }
+.milestone--pending   .milestone-phase__icon-wrap { background: var(--color-surface-container-high); }
+.milestone--pending   .milestone-phase__icon { color: var(--color-outline); }
+
+/* Content */
+.milestone-phase__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.milestone-phase__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.milestone-phase__status-chip {
+  font-size: 0.6rem !important;
+  padding: 2px 8px;
+}
+
+.milestone--complete .milestone-phase__status-chip {
+  background: rgba(107,255,143,0.2);
+  color: var(--color-on-tertiary-container);
+}
+
+.milestone--progress .milestone-phase__status-chip {
+  background: rgba(245,158,11,0.12);
+  color: #856404;
+}
+
+.milestone--pending .milestone-phase__status-chip {
+  background: var(--color-surface-container-high);
+  color: var(--color-outline);
+}
+
+.milestone-phase__notes {
+  margin-top: var(--space-2);
+  line-height: 1.5;
+}

@@ -1,0 +1,22 @@
+/* ── App Layout Shell ──────────────────────────────────────── */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-background);
+}
+
+.app-layout__main {
+  margin-left: var(--sidebar-width);
+  flex: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 56px; /* bottom nav height */
+}
+
+.app-layout__content {
+  flex: 1;
+  padding: var(--space-8);
+  max-width: 1400px;
+  width: 100%;
+}

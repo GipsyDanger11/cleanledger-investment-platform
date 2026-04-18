@@ -1,0 +1,73 @@
+/* ═══════════════════════════════════════════════════════
+   LINEAR LEDGER — Typography Scale
+   CleanLedger Investment Platform
+   ═══════════════════════════════════════════════════════ */
+
+/* Type scale utilities */
+.text-display {
+  font-family: var(--font-family);
+  font-size: var(--font-size-display);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.text-headline {
+  font-family: var(--font-family);
+  font-size: var(--font-size-headline);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.text-title {
+  font-family: var(--font-family);
+  font-size: var(--font-size-title);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.text-body-md {
+  font-family: var(--font-family);
+  font-size: var(--font-size-body-md);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.text-body-sm {
+  font-family: var(--font-family);
+  font-size: var(--font-size-body-sm);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.text-label-md {
+  font-family: var(--font-family);
+  font-size: var(--font-size-label-md);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+}
+
+.text-label-sm {
+  font-family: var(--font-family);
+  font-size: var(--font-size-label-sm);
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+}
+
+/* REQUIRED for all financial/numerical values */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* Text color utilities */
+.text-primary    { color: var(--color-on-surface); }
+.text-secondary  { color: var(--color-on-surface-variant); }
+.text-meta       { color: var(--color-outline); }
+.text-success    { color: var(--color-on-tertiary-container); }
+.text-error      { color: var(--color-error); }
+.text-white      { color: #FFFFFF; }
+.text-sidebar    { color: var(--color-on-primary-container); }

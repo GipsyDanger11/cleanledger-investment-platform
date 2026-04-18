@@ -1,0 +1,39 @@
+/* ── Audit Trail ───────────────────────────────────────────── */
+.audit-trail {}
+
+.audit-trail__filters {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.audit-trail__select {
+  max-width: 220px;
+  flex-shrink: 0;
+}
+
+.audit-trail__chain-banner {
+  margin-bottom: var(--space-4);
+}
+
+.audit-trail__table-wrap {
+  padding: 0;
+  overflow: hidden;
+}
+
+.audit-trail__table-wrap .data-table th {
+  padding: var(--space-4) var(--space-6);
+}
+
+.audit-trail__table-wrap .data-table td {
+  padding: var(--space-3) var(--space-6);
+}
+
+.audit-trail__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-4);
+  padding: var(--space-4) 0;
+}

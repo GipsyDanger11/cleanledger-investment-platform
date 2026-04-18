@@ -1,0 +1,47 @@
+/* ── Bottom Nav Strip ──────────────────────────────────────── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: var(--sidebar-width);
+  right: 0;
+  height: 56px;
+  background: var(--color-surface-container-lowest);
+  border-top: 1px solid rgba(197, 198, 205, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+  z-index: 90;
+  box-shadow: 0 -4px 24px rgba(9, 20, 38, 0.04);
+}
+
+.bottom-nav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-decoration: none;
+  color: var(--color-outline);
+  transition: color 150ms ease;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--border-radius-container);
+}
+
+.bottom-nav__item:hover {
+  color: var(--color-on-surface);
+}
+
+.bottom-nav__item--active {
+  color: var(--color-primary-container);
+}
+
+.bottom-nav__icon {
+  font-size: 20px !important;
+}
+
+.bottom-nav__label {
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

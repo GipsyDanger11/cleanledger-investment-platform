@@ -1,0 +1,89 @@
+/* ── Dashboard ────────────────────────────────────────────── */
+.dashboard { }
+
+.dashboard__header {
+  margin-bottom: var(--space-8);
+}
+
+.dashboard__date {
+  margin-top: var(--space-2);
+}
+
+/* KPI Grid */
+.dashboard__kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+/* Body */
+.dashboard__body {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+/* Investments */
+.dashboard__investments { }
+
+.dashboard__inv-row {
+  transition: background 150ms ease;
+}
+
+.dashboard__inv-avatar {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+/* Notifications */
+.dashboard__notifications { }
+
+.dashboard__notif-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.dashboard__notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--border-radius-container);
+  transition: background 150ms ease;
+}
+
+.dashboard__notif-item:hover {
+  background: var(--color-surface-container-high);
+}
+
+.dashboard__notif-item--unread {
+  background: rgba(107,255,143,0.05);
+}
+
+.dashboard__notif-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--color-surface-container-high);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-on-surface-variant);
+}
+
+.dashboard__notif-icon .material-symbols-outlined {
+  font-size: 16px !important;
+}
