@@ -3,13 +3,67 @@
  * The Python service (Flask + Mistral) runs on port 5001
  */
 
+const fs = require('fs');
+const path = require('path');
+
+// server/controllers → parent is server/ (where .env lives)
+const SERVER_ROOT = path.join(__dirname, '..');
+const SERVER_ENV = path.join(SERVER_ROOT, '.env');
+
+require('dotenv').config({ path: SERVER_ENV });
+
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:5001';
+
+/** Read key from disk if process.env is empty (some npm/cwd setups skip dotenv in server.js). */
+function readMistralKeyFromFile() {
+  try {
+    const raw = fs.readFileSync(SERVER_ENV, 'utf8');
+    for (const line of raw.split(/\r?\n/)) {
+      const m = line.match(/^\s*MISTRAL_API_KEY\s*=\s*(.*)$/);
+      if (!m) continue;
+      let v = m[1].trim();
+      if (
+        (v.startsWith('"') && v.endsWith('"')) ||
+        (v.startsWith("'") && v.endsWith("'"))
+      ) {
+        v = v.slice(1, -1);
+      }
+      return v;
+    }
+  } catch (_) {
+    /* no .env file */
+  }
+  return '';
+}
+
+let warnedMissingKey = false;
+
+function getMistralKey() {
+  const fromEnv = (process.env.MISTRAL_API_KEY || '').trim();
+  if (fromEnv) return fromEnv;
+  const fromFile = readMistralKeyFromFile();
+  if (fromFile) return fromFile;
+  if (!warnedMissingKey) {
+    warnedMissingKey = true;
+    console.warn(
+      '[voice] MISTRAL_API_KEY missing. Add it to server/.env (see .env.example).',
+    );
+  }
+  return '';
+}
+
+/** Forward key so Python JARVIS works even when its process does not load server/.env */
+function withMistralKey(body) {
+  const key = getMistralKey();
+  if (!key) return body;
+  return { ...body, mistralApiKey: key };
+}
 
 async function proxyToPython(path, body, res) {
   const response = await fetch(`${AI_SERVICE_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify(withMistralKey(body)),
   });
 
   const data = await response.json().catch(() => ({}));
@@ -35,7 +89,7 @@ const voiceChat = async (req, res) => {
     const response = await fetch(`${AI_SERVICE_URL}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify(withMistralKey({ messages })),
     });
 
     const data = await response.json().catch(() => ({}));

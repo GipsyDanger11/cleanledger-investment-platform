@@ -8,14 +8,23 @@ import json
 import os
 import urllib.error
 import urllib.request
+from pathlib import Path
 
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+
+# Load server/ai_service/.env then server/.env.
+# override=True: a blank MISTRAL_API_KEY in the OS would otherwise block values from .env
+_ai_root = Path(__file__).resolve().parent
+for _env_path in (_ai_root / ".env", _ai_root.parent / ".env"):
+    if _env_path.is_file():
+        load_dotenv(_env_path, override=True, encoding="utf-8-sig")
 
 app = Flask(__name__)
 CORS(app)
 
-MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY", "")
+MISTRAL_API_KEY = (os.environ.get("MISTRAL_API_KEY") or "").strip()
 MISTRAL_API_URL = os.environ.get(
     "MISTRAL_API_URL", "https://api.mistral.ai/v1/chat/completions"
 )
@@ -55,8 +64,9 @@ The viabilityScore is 0-100 based on the quality and completeness of the pitch.
 Be concise, professional, and objective. Focus on investor-relevant insights."""
 
 
-def _call_mistral_http(messages, temperature=0.4, max_tokens=600):
+def _call_mistral_http(messages, temperature=0.4, max_tokens=600, api_key=None):
     """REST fallback (OpenAI-compatible chat completions)."""
+    key = (api_key or MISTRAL_API_KEY or "").strip()
     payload = json.dumps({
         "model": MISTRAL_CHAT_MODEL,
         "messages": messages,
@@ -69,7 +79,7 @@ def _call_mistral_http(messages, temperature=0.4, max_tokens=600):
         data=payload,
         headers={
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {MISTRAL_API_KEY}",
+            "Authorization": f"Bearer {key}",
             "Accept": "application/json",
         },
         method="POST",
@@ -80,10 +90,11 @@ def _call_mistral_http(messages, temperature=0.4, max_tokens=600):
         return data["choices"][0]["message"]["content"]
 
 
-def _call_mistral_sdk(messages, temperature=0.4, max_tokens=600):
+def _call_mistral_sdk(messages, temperature=0.4, max_tokens=600, api_key=None):
     """Official mistralai v2 SDK."""
     from mistralai.client import Mistral
 
+    key = (api_key or MISTRAL_API_KEY or "").strip()
     kwargs = {
         "model": MISTRAL_CHAT_MODEL,
         "messages": messages,
@@ -91,7 +102,7 @@ def _call_mistral_sdk(messages, temperature=0.4, max_tokens=600):
         "max_tokens": max_tokens,
         "stream": False,
     }
-    with Mistral(api_key=MISTRAL_API_KEY) as client:
+    with Mistral(api_key=key) as client:
         try:
             res = client.chat.complete(**kwargs, response_format={"type": "text"})
         except TypeError:
@@ -111,19 +122,20 @@ def _call_mistral_sdk(messages, temperature=0.4, max_tokens=600):
     return content
 
 
-def call_mistral(messages, temperature=0.4, max_tokens=600):
+def call_mistral(messages, temperature=0.4, max_tokens=600, api_key=None):
     """Prefer SDK; fall back to HTTP if SDK import or call fails."""
-    if not MISTRAL_API_KEY:
+    key = (api_key or MISTRAL_API_KEY or "").strip()
+    if not key:
         raise ValueError("MISTRAL_API_KEY not set")
 
     use_sdk = os.environ.get("MISTRAL_USE_SDK", "1").strip() not in ("0", "false", "no")
     if use_sdk:
         try:
-            return _call_mistral_sdk(messages, temperature, max_tokens)
+            return _call_mistral_sdk(messages, temperature, max_tokens, api_key=key)
         except Exception as e:
             print(f"[JARVIS] Mistral SDK failed ({type(e).__name__}: {e}), using HTTP fallback")
 
-    return _call_mistral_http(messages, temperature, max_tokens)
+    return _call_mistral_http(messages, temperature, max_tokens, api_key=key)
 
 
 @app.route("/health", methods=["GET"])
@@ -143,13 +155,15 @@ def chat():
     Body: { "messages": [{ "role": "user"|"assistant", "content": "..." }] }
     """
     try:
-        if not MISTRAL_API_KEY:
+        data = request.get_json(force=True)
+        req_key = (data.pop("mistralApiKey", None) or "").strip()
+        effective_key = req_key or MISTRAL_API_KEY
+        if not effective_key:
             return jsonify({
                 "success": False,
                 "message": "Mistral API key not configured.",
             }), 500
 
-        data = request.get_json(force=True)
         messages = data.get("messages", [])
 
         chat_messages = [{"role": "system", "content": VOICE_SYSTEM_PROMPT}]
@@ -159,7 +173,7 @@ def chat():
                 "content": m.get("content", ""),
             })
 
-        ai_text = call_mistral(chat_messages)
+        ai_text = call_mistral(chat_messages, api_key=effective_key)
         return jsonify({"success": True, "response": ai_text})
 
     except urllib.error.HTTPError as e:
@@ -184,13 +198,15 @@ def summarize_pitch():
     Body: { "text": "full business plan text..." }
     """
     try:
-        if not MISTRAL_API_KEY:
+        data = request.get_json(force=True)
+        req_key = (data.get("mistralApiKey") or "").strip()
+        effective_key = req_key or MISTRAL_API_KEY
+        if not effective_key:
             return jsonify({
                 "success": False,
                 "message": "Mistral API key not configured.",
             }), 500
 
-        data = request.get_json(force=True)
         pitch_text = data.get("text", "").strip()
 
         if not pitch_text:
@@ -211,7 +227,9 @@ def summarize_pitch():
             },
         ]
 
-        ai_response = call_mistral(messages, temperature=0.2, max_tokens=800)
+        ai_response = call_mistral(
+            messages, temperature=0.2, max_tokens=800, api_key=effective_key
+        )
 
         try:
             clean = ai_response.strip()

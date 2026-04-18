@@ -1,4 +1,22 @@
-require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+
+const envCandidates = [
+  path.join(__dirname, '.env'),
+  path.join(process.cwd(), '.env'),
+  path.join(process.cwd(), 'server', '.env'),
+];
+let loadedEnv = false;
+for (const p of envCandidates) {
+  if (fs.existsSync(p)) {
+    require('dotenv').config({ path: p });
+    loadedEnv = true;
+    break;
+  }
+}
+if (!loadedEnv) {
+  require('dotenv').config();
+}
 const { execSync } = require('child_process');
 const app = require('./app');
 const connectDB = require('./config/db');
