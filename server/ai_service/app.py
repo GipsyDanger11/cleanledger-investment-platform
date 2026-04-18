@@ -1,21 +1,26 @@
 """
 CleanLedger JARVIS AI Voice Service
-Flask server — Mistral AI via direct HTTP + Pitch Summarizer
-Runs on port 5001
+Flask — Mistral AI via official Python SDK (v2) with HTTP fallback
+Runs on port 5001 (override with AI_SERVICE_PORT)
 """
 
-import os
 import json
-import urllib.request
+import os
 import urllib.error
-from flask import Flask, request, jsonify
+import urllib.request
+
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
 
 MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY", "")
-MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
+MISTRAL_API_URL = os.environ.get(
+    "MISTRAL_API_URL", "https://api.mistral.ai/v1/chat/completions"
+)
+# Default model: override with MISTRAL_CHAT_MODEL (e.g. mistral-small-latest, open-mistral-7b)
+MISTRAL_CHAT_MODEL = os.environ.get("MISTRAL_CHAT_MODEL", "mistral-large-latest")
 
 # ── System prompt for voice login ────────────────────────
 VOICE_SYSTEM_PROMPT = """You are JARVIS, an AI assistant for CleanLedger — a secure investment platform. You help users log in and sign up using voice commands.
@@ -50,13 +55,10 @@ The viabilityScore is 0-100 based on the quality and completeness of the pitch.
 Be concise, professional, and objective. Focus on investor-relevant insights."""
 
 
-def call_mistral(messages, temperature=0.4, max_tokens=600):
-    """Call Mistral API directly via HTTP POST."""
-    if not MISTRAL_API_KEY:
-        raise ValueError("MISTRAL_API_KEY not set")
-
+def _call_mistral_http(messages, temperature=0.4, max_tokens=600):
+    """REST fallback (OpenAI-compatible chat completions)."""
     payload = json.dumps({
-        "model": "mistral-large-latest",
+        "model": MISTRAL_CHAT_MODEL,
         "messages": messages,
         "temperature": temperature,
         "max_tokens": max_tokens,
@@ -68,33 +70,83 @@ def call_mistral(messages, temperature=0.4, max_tokens=600):
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {MISTRAL_API_KEY}",
+            "Accept": "application/json",
         },
         method="POST",
     )
 
-    with urllib.request.urlopen(req, timeout=30) as resp:
+    with urllib.request.urlopen(req, timeout=60) as resp:
         data = json.loads(resp.read().decode("utf-8"))
         return data["choices"][0]["message"]["content"]
 
 
+def _call_mistral_sdk(messages, temperature=0.4, max_tokens=600):
+    """Official mistralai v2 SDK."""
+    from mistralai.client import Mistral
+
+    kwargs = {
+        "model": MISTRAL_CHAT_MODEL,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "stream": False,
+    }
+    with Mistral(api_key=MISTRAL_API_KEY) as client:
+        try:
+            res = client.chat.complete(**kwargs, response_format={"type": "text"})
+        except TypeError:
+            # Older SDK builds without response_format on this method
+            res = client.chat.complete(**kwargs)
+
+    choices = getattr(res, "choices", None) or []
+    if not choices:
+        raise RuntimeError("Mistral returned no choices")
+    first = choices[0]
+    msg = getattr(first, "message", first)
+    content = getattr(msg, "content", None)
+    if content is None and isinstance(msg, dict):
+        content = msg.get("content")
+    if not content:
+        raise RuntimeError("Mistral returned empty content")
+    return content
+
+
+def call_mistral(messages, temperature=0.4, max_tokens=600):
+    """Prefer SDK; fall back to HTTP if SDK import or call fails."""
+    if not MISTRAL_API_KEY:
+        raise ValueError("MISTRAL_API_KEY not set")
+
+    use_sdk = os.environ.get("MISTRAL_USE_SDK", "1").strip() not in ("0", "false", "no")
+    if use_sdk:
+        try:
+            return _call_mistral_sdk(messages, temperature, max_tokens)
+        except Exception as e:
+            print(f"[JARVIS] Mistral SDK failed ({type(e).__name__}: {e}), using HTTP fallback")
+
+    return _call_mistral_http(messages, temperature, max_tokens)
+
+
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok", "service": "JARVIS AI Voice Service"})
+    return jsonify({
+        "status": "ok",
+        "service": "JARVIS AI Voice Service",
+        "mistral_model": MISTRAL_CHAT_MODEL,
+        "sdk_preferred": os.environ.get("MISTRAL_USE_SDK", "1") not in ("0", "false", "no"),
+    })
 
 
-# ── Voice Login Chat ──────────────────────────────────────
 @app.route("/chat", methods=["POST"])
 def chat():
     """
     POST /chat
     Body: { "messages": [{ "role": "user"|"assistant", "content": "..." }] }
-    Returns: { "success": true, "response": "AI text" }
     """
     try:
         if not MISTRAL_API_KEY:
             return jsonify({
                 "success": False,
-                "message": "Mistral API key not configured."
+                "message": "Mistral API key not configured.",
             }), 500
 
         data = request.get_json(force=True)
@@ -104,7 +156,7 @@ def chat():
         for m in messages:
             chat_messages.append({
                 "role": m.get("role", "user"),
-                "content": m.get("content", "")
+                "content": m.get("content", ""),
             })
 
         ai_text = call_mistral(chat_messages)
@@ -113,23 +165,30 @@ def chat():
     except urllib.error.HTTPError as e:
         error_body = e.read().decode("utf-8") if e.fp else str(e)
         print(f"[JARVIS ERROR] Mistral API HTTP {e.code}: {error_body}")
-        return jsonify({"success": False, "message": f"Mistral API error ({e.code})"}), 502
+        return jsonify({
+            "success": False,
+            "message": f"Mistral API error ({e.code})",
+        }), 502
     except Exception as e:
         print(f"[JARVIS ERROR] {type(e).__name__}: {str(e)}")
-        return jsonify({"success": False, "message": f"AI service error: {str(e)}"}), 500
+        return jsonify({
+            "success": False,
+            "message": f"AI service error: {str(e)}",
+        }), 500
 
 
-# ── R1: Pitch / Business Plan Summarizer ─────────────────
 @app.route("/summarize-pitch", methods=["POST"])
 def summarize_pitch():
     """
     POST /summarize-pitch
     Body: { "text": "full business plan text..." }
-    Returns: { "success": true, "analysis": { summary, keyPoints, riskFlags, ... } }
     """
     try:
         if not MISTRAL_API_KEY:
-            return jsonify({"success": False, "message": "Mistral API key not configured."}), 500
+            return jsonify({
+                "success": False,
+                "message": "Mistral API key not configured.",
+            }), 500
 
         data = request.get_json(force=True)
         pitch_text = data.get("text", "").strip()
@@ -137,28 +196,32 @@ def summarize_pitch():
         if not pitch_text:
             return jsonify({"success": False, "message": "No pitch text provided"}), 400
         if len(pitch_text) < 50:
-            return jsonify({"success": False, "message": "Pitch text too short. Please provide more detail."}), 400
+            return jsonify({
+                "success": False,
+                "message": "Pitch text too short. Please provide more detail.",
+            }), 400
         if len(pitch_text) > 10000:
-            pitch_text = pitch_text[:10000]  # Truncate
+            pitch_text = pitch_text[:10000]
 
         messages = [
             {"role": "system", "content": PITCH_SYSTEM_PROMPT},
-            {"role": "user", "content": f"Analyze this startup pitch/business plan:\n\n{pitch_text}"}
+            {
+                "role": "user",
+                "content": f"Analyze this startup pitch/business plan:\n\n{pitch_text}",
+            },
         ]
 
         ai_response = call_mistral(messages, temperature=0.2, max_tokens=800)
 
-        # Try to parse JSON from response
         try:
-            # Handle possible markdown code fences
             clean = ai_response.strip()
             if clean.startswith("```"):
-                clean = clean.split("```")[1]
+                parts = clean.split("```")
+                clean = parts[1] if len(parts) > 1 else clean
                 if clean.startswith("json"):
                     clean = clean[4:]
             analysis = json.loads(clean.strip())
         except json.JSONDecodeError:
-            # Fallback: return raw text as summary
             analysis = {
                 "summary": ai_response[:300],
                 "keyPoints": [],
@@ -166,7 +229,7 @@ def summarize_pitch():
                 "riskFlags": [],
                 "trustSignals": [],
                 "recommendedCategory": "Other",
-                "viabilityScore": 50
+                "viabilityScore": 50,
             }
 
         return jsonify({"success": True, "analysis": analysis})
@@ -174,17 +237,23 @@ def summarize_pitch():
     except urllib.error.HTTPError as e:
         error_body = e.read().decode("utf-8") if e.fp else str(e)
         print(f"[JARVIS ERROR] Mistral API HTTP {e.code}: {error_body}")
-        return jsonify({"success": False, "message": f"Mistral API error ({e.code})"}), 502
+        return jsonify({
+            "success": False,
+            "message": f"Mistral API error ({e.code})",
+        }), 502
     except Exception as e:
         print(f"[JARVIS ERROR] {type(e).__name__}: {str(e)}")
-        return jsonify({"success": False, "message": f"AI service error: {str(e)}"}), 500
+        return jsonify({
+            "success": False,
+            "message": f"AI service error: {str(e)}",
+        }), 500
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("AI_SERVICE_PORT", 5001))
-    print(f"[JARVIS] AI Service running on port {port}")
+    port = int(os.environ.get("AI_SERVICE_PORT", "5001"))
+    print(f"[JARVIS] AI Service on port {port} | model={MISTRAL_CHAT_MODEL}")
     if not MISTRAL_API_KEY:
         print("[WARNING] MISTRAL_API_KEY not set! Voice AI will not work.")
     else:
-        print(f"[OK] Mistral API key loaded ({MISTRAL_API_KEY[:8]}...)")
+        print(f"[OK] MISTRAL_API_KEY loaded ({MISTRAL_API_KEY[:8]}...)")
     app.run(host="0.0.0.0", port=port, debug=False)

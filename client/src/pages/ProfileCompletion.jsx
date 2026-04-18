@@ -151,14 +151,17 @@ export default function ProfileCompletion() {
     if (!plan.pitchText.trim()) return;
     setAiLoading(true); setAiAnalysis(null);
     try {
-      const res = await fetch('http://localhost:5001/summarize-pitch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: plan.pitchText }),
+      const { data } = await apiClient.post('/voice/summarize-pitch', {
+        text: plan.pitchText,
       });
-      const data = await res.json();
       if (data.success) setAiAnalysis(data.analysis);
-    } catch { setError('AI service unavailable. You can continue without analysis.'); }
+      else setError(data.message || 'AI analysis failed. You can continue without it.');
+    } catch (err) {
+      setError(
+        err.response?.data?.message
+        || 'AI service unavailable. Start the Python service (server/ai_service) and ensure MISTRAL_API_KEY is set.',
+      );
+    }
     finally { setAiLoading(false); }
   };
 
