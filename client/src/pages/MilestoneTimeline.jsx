@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import apiClient from '../services/apiClient';
+import apiClient from '../utils/apiClient';
 import './MilestoneTimeline.css';
 
 const STATUS_META = {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import apiClient from '../services/apiClient';
+import apiClient from '../utils/apiClient';
 import './ProfileCompletion.css';
 
 const STEPS = [
@@ -15,10 +15,9 @@ const STEPS = [
 const CATEGORIES = ['FinTech','HealthTech','EdTech','AgriTech','CleanTech','SaaS','E-Commerce','Other'];
 const SECTORS    = ['Technology','Healthcare','Education','Agriculture','Finance','Real Estate','Retail','Other'];
 const TIMELINES  = ['6 months','12 months','18 months','24 months'];
-const STAGES     = ['pre-seed','seed','series-a','series-b','growth'];
 
 export default function ProfileCompletion() {
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
