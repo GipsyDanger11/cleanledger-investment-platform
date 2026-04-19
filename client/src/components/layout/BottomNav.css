@@ -1,4 +1,4 @@
-/* ── Bottom Nav Strip — White + Blue ───────────────────────── */
+/* ── Bottom Nav Strip — Unified Design ─────────────────── */
 .bottom-nav {
   position: fixed;
   bottom: 0;
@@ -6,13 +6,13 @@
   right: 0;
   height: 56px;
   background: #FFFFFF;
-  border-top: 1px solid #E0E0E0;
+  border-top: 1px solid var(--color-outline-variant);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-8);
   z-index: 90;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 -2px 8px rgba(15, 23, 42, 0.04);
 }
 
 .bottom-nav__item {
@@ -21,18 +21,18 @@
   align-items: center;
   gap: 2px;
   text-decoration: none;
-  color: #9E9E9E;
-  transition: color 150ms ease;
+  color: var(--color-outline);
+  transition: color 200ms ease;
   padding: var(--space-2) var(--space-4);
   border-radius: var(--border-radius-container);
 }
 
 .bottom-nav__item:hover {
-  color: #111111;
+  color: var(--color-on-surface);
 }
 
 .bottom-nav__item--active {
-  color: #1976D2;
+  color: var(--color-primary);
 }
 
 .bottom-nav__icon {
@@ -41,7 +41,7 @@
 
 .bottom-nav__label {
   font-size: 0.6rem;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }

@@ -80,7 +80,7 @@
 
 .onboarding__step-item.active .onboarding__step-icon {
   background: #FFFFFF;
-  color: #1565C0;
+  color: var(--color-primary);
 }
 
 .onboarding__step-item.done .onboarding__step-icon {

@@ -1,76 +1,91 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
-/* Founder dashboard (startup-only) */
+/* Founder dashboard (startup-only) — Unified Design */
 .founder-dash {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   background: #ffffff;
-  color: #111111;
+  color: var(--color-on-surface);
 }
 .founder-dash__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 .founder-dash__title {
+  font-family: var(--font-family-display);
   font-size: 1.5rem;
-  color: #1565c0;
+  font-weight: 700;
+  color: var(--color-on-surface);
   margin: 0 0 0.25rem;
+  letter-spacing: -0.02em;
 }
 .founder-dash__sub {
   margin: 0;
-  color: #111111;
+  color: var(--color-on-surface-variant);
   font-size: 0.9rem;
 }
 .founder-dash__badge {
-  background: #e3f2fd;
-  border: 1px solid #90caf9;
-  color: #1565c0;
-  padding: 0.3rem 0.7rem;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  padding: 0.35rem 0.75rem;
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 .founder-dash__stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 0.9rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 .founder-stat-card {
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 1rem;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: 16px;
+  padding: 1.1rem;
   background: #ffffff;
+  box-shadow: var(--shadow-ambient);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.founder-stat-card:hover {
+  border-color: rgba(37,99,235,.2);
+  box-shadow: 0 4px 16px rgba(37,99,235,.06);
 }
 .founder-stat-card__value {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 800;
-  color: #111111;
+  color: var(--color-on-surface);
 }
 .founder-stat-card__label {
-  font-size: 0.75rem;
-  color: #111111;
+  font-size: 0.72rem;
+  color: var(--color-outline);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  margin-top: 0.2rem;
 }
 .founder-dash__grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
 }
+@media (max-width: 800px) {
+  .founder-dash__grid { grid-template-columns: 1fr; }
+}
 .founder-panel {
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 1rem;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: 16px;
+  padding: 1.25rem;
   background: #ffffff;
+  box-shadow: var(--shadow-ambient);
 }
 .founder-panel h2 {
-  margin: 0 0 0.8rem;
+  font-family: var(--font-family-display);
+  margin: 0 0 0.9rem;
   font-size: 1rem;
-  color: #1565c0;
+  font-weight: 700;
+  color: var(--color-on-surface);
 }
 .founder-activity,
 .founder-milestones {
@@ -79,17 +94,23 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.6rem;
 }
 .founder-activity li,
 .founder-milestones li {
-  padding: 0.6rem;
-  border: 1px solid #f0f0f0;
-  border-radius: 10px;
+  padding: 0.7rem;
+  border: 1px solid var(--color-surface-container);
+  border-radius: 12px;
+  transition: background 0.15s;
+}
+.founder-activity li:hover,
+.founder-milestones li:hover {
+  background: var(--color-surface-container-low);
 }
 .founder-activity p {
   margin: 0.3rem 0 0;
   font-size: 0.84rem;
+  color: var(--color-on-surface-variant);
 }
 .founder-milestones li {
   display: flex;
@@ -102,17 +123,19 @@
   font-weight: 700;
   text-transform: uppercase;
   border-radius: 999px;
-  padding: 0.2rem 0.45rem;
+  padding: 0.2rem 0.55rem;
+  letter-spacing: 0.02em;
 }
-.status--released, .status--verified { background: #e8f5e9; color: #2e7d32; }
-.status--submitted, .status--in_progress { background: #fff8e1; color: #ef6c00; }
-.status--pending { background: #f5f7fa; color: #1565c0; }
+.status--released, .status--verified { background: #ecfdf5; color: #065f46; }
+.status--submitted, .status--in_progress { background: #fffbeb; color: #92400e; }
+.status--pending { background: var(--color-surface-container); color: var(--color-primary); }
 
 .founder-dash--loading, .founder-dash--error {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 60vh;
-  color: #111111;
+  color: var(--color-on-surface-variant);
+  font-size: 14px;
 }
-.founder-dash--error { color: #d32f2f; }
+.founder-dash--error { color: var(--color-error); }

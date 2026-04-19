@@ -1,5 +1,4 @@
-/* ── Fund Dashboard 2.0 ────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+/* ── Fund Dashboard — Unified Design ────────────────────── */
 
 .fund-dashboard {
   display: flex;
@@ -18,14 +17,16 @@
   gap: 12px;
 }
 .fd-header__title {
+  font-family: var(--font-family-display);
   font-size: 24px;
-  font-weight: 800;
-  color: #111827;
+  font-weight: 700;
+  color: var(--color-on-surface);
   margin: 0 0 4px;
+  letter-spacing: -0.02em;
 }
 .fd-header__sub {
   font-size: 13px;
-  color: #6B7280;
+  color: var(--color-outline);
   margin: 0;
 }
 .fd-header__controls {
@@ -37,17 +38,18 @@
 .fd-startup-select {
   padding: 8px 14px;
   border-radius: 10px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--color-outline-variant);
   background: #fff;
   font-size: 13px;
   font-weight: 600;
-  color: #111827;
+  color: var(--color-on-surface);
   outline: none;
   cursor: pointer;
   font-family: inherit;
   min-width: 200px;
+  transition: border-color 0.2s;
 }
-.fd-startup-select:focus { border-color: #6366F1; }
+.fd-startup-select:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(37,99,235,.08); }
 
 .fd-verify-badge {
   display: flex;
@@ -61,10 +63,10 @@
 
 /* ── Alerts ── */
 .fd-alert-banner {
-  background: #FEF3C7;
-  border: 1px solid #FDE68A;
-  border-left: 4px solid #F59E0B;
-  border-radius: 12px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-left: 4px solid #f59e0b;
+  border-radius: 14px;
   padding: 14px 18px;
   display: flex;
   flex-direction: column;
@@ -76,7 +78,7 @@
   gap: 8px;
   font-size: 13px;
   font-weight: 700;
-  color: #92400E;
+  color: #92400e;
 }
 .fd-alert-banner__items { display: flex; flex-direction: column; gap: 6px; }
 .fd-alert-banner__item {
@@ -84,19 +86,19 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #78350F;
+  color: #78350f;
 }
 
 .fd-alert-chip {
-  background: #FEE2E2;
-  color: #DC2626;
+  background: #fef2f2;
+  color: var(--color-error);
   padding: 2px 8px;
   border-radius: 999px;
   font-size: 10px;
   font-weight: 700;
 }
 .fd-ok-chip {
-  background: #D1FAE5;
+  background: #ecfdf5;
   color: #059669;
   padding: 2px 8px;
   border-radius: 999px;
@@ -113,16 +115,16 @@
 
 .fd-kpi-card {
   background: #fff;
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--color-outline-variant);
   border-radius: 16px;
   padding: 18px 16px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: var(--shadow-ambient);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-.fd-kpi-card:hover { border-color: #C7D2FE; box-shadow: 0 2px 12px rgba(99,102,241,0.08); }
+.fd-kpi-card:hover { border-color: rgba(37,99,235,.2); box-shadow: 0 4px 16px rgba(37,99,235,.06); }
 
 .fd-kpi-card__icon-wrap {
   width: 42px;
@@ -136,17 +138,17 @@
 .fd-kpi-card__value {
   font-size: 24px;
   font-weight: 800;
-  color: #111827;
+  color: var(--color-on-surface);
   line-height: 1;
 }
 .fd-kpi-card__label {
   font-size: 12px;
   font-weight: 600;
-  color: #6B7280;
+  color: var(--color-outline);
 }
 .fd-kpi-card__bar-track {
   height: 4px;
-  background: #F3F4F6;
+  background: var(--color-surface-container);
   border-radius: 999px;
   overflow: hidden;
   margin-top: 4px;
@@ -158,14 +160,14 @@
 }
 .fd-kpi-card__sub {
   font-size: 11px;
-  color: #9CA3AF;
+  color: var(--color-outline);
 }
 
 /* ── Tabs ── */
 .fd-tabs {
   display: flex;
   gap: 4px;
-  background: #F3F4F6;
+  background: var(--color-surface-container-low);
   padding: 4px;
   border-radius: 12px;
 }
@@ -176,18 +178,18 @@
   justify-content: center;
   gap: 6px;
   padding: 8px 12px;
-  border-radius: 9px;
+  border-radius: 10px;
   border: none;
   background: none;
   font-size: 13px;
   font-weight: 600;
-  color: #6B7280;
+  color: var(--color-outline);
   cursor: pointer;
   font-family: inherit;
-  transition: all 0.15s;
+  transition: all 0.2s;
 }
-.fd-tab:hover { color: #374151; background: rgba(255,255,255,0.5); }
-.fd-tab--active { background: #fff; color: #4F46E5; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+.fd-tab:hover { color: var(--color-on-surface-variant); background: rgba(255,255,255,0.6); }
+.fd-tab--active { background: #fff; color: var(--color-primary); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
 
 /* ── Overview ── */
 .fd-overview {
@@ -200,10 +202,10 @@
 /* ── Section card ── */
 .fd-section-card {
   background: #fff;
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--color-outline-variant);
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: var(--shadow-ambient);
 }
 
 .fd-section-title {
@@ -212,7 +214,7 @@
   gap: 8px;
   font-size: 15px;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-on-surface);
   margin: 0 0 18px;
 }
 
@@ -220,8 +222,8 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: #EEF2FF;
-  color: #4338CA;
+  background: #eff6ff;
+  color: #1d4ed8;
   padding: 3px 8px;
   border-radius: 999px;
   font-size: 10px;
@@ -233,8 +235,8 @@
 .fd-alloc-list { display: flex; flex-direction: column; gap: 14px; }
 .fd-alloc-row { display: flex; align-items: center; gap: 10px; }
 .fd-alloc-row__meta { display: flex; align-items: center; gap: 6px; width: 160px; flex-shrink: 0; }
-.fd-alloc-label { font-size: 12px; font-weight: 600; color: #374151; }
-.fd-alloc-bar-track { flex: 1; height: 8px; background: #F3F4F6; border-radius: 999px; overflow: hidden; }
+.fd-alloc-label { font-size: 12px; font-weight: 600; color: var(--color-on-surface-variant); }
+.fd-alloc-bar-track { flex: 1; height: 8px; background: var(--color-surface-container); border-radius: 999px; overflow: hidden; }
 .fd-alloc-bar-fill { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
 .fd-alloc-pct { font-size: 12px; font-weight: 700; width: 40px; text-align: right; }
 
@@ -243,10 +245,10 @@
 .fd-cat-bar { display: flex; flex-direction: column; gap: 6px; }
 .fd-cat-bar__header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .fd-cat-bar__meta { display: flex; align-items: center; gap: 6px; }
-.fd-cat-bar__label { font-size: 12px; font-weight: 600; color: #374151; }
+.fd-cat-bar__label { font-size: 12px; font-weight: 600; color: var(--color-on-surface-variant); }
 .fd-cat-bar__nums { display: flex; align-items: center; gap: 8px; font-size: 11px; }
 .fd-cat-bar__tracks { display: flex; flex-direction: column; gap: 4px; }
-.fd-cat-bar__track { height: 6px; background: #F3F4F6; border-radius: 999px; overflow: hidden; }
+.fd-cat-bar__track { height: 6px; background: var(--color-surface-container); border-radius: 999px; overflow: hidden; }
 .fd-cat-bar__fill { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
 
 /* Expense list */
@@ -257,7 +259,7 @@
   gap: 12px;
   padding: 40px;
   text-align: center;
-  color: #9CA3AF;
+  color: var(--color-outline);
 }
 .fd-empty p { margin: 0; font-size: 14px; }
 
@@ -267,12 +269,12 @@
   align-items: center;
   gap: 14px;
   padding: 14px;
-  background: #F9FAFB;
+  background: var(--color-surface-container-low);
   border-radius: 12px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--color-outline-variant);
   transition: border-color 0.2s;
 }
-.fd-expense-item:hover { border-color: #C7D2FE; }
+.fd-expense-item:hover { border-color: rgba(37,99,235,.2); }
 .fd-expense-item__icon {
   width: 44px;
   height: 44px;
@@ -283,30 +285,30 @@
   flex-shrink: 0;
 }
 .fd-expense-item__info { flex: 1; }
-.fd-expense-item__desc { font-size: 14px; font-weight: 600; color: #111827; }
-.fd-expense-item__meta { font-size: 11px; color: #9CA3AF; margin-top: 2px; }
+.fd-expense-item__desc { font-size: 14px; font-weight: 600; color: var(--color-on-surface); }
+.fd-expense-item__meta { font-size: 11px; color: var(--color-outline); margin-top: 2px; }
 .fd-expense-item__right { text-align: right; }
-.fd-expense-item__amount { font-size: 16px; font-weight: 800; color: #111827; }
-.fd-expense-item__link { font-size: 11px; color: #4F46E5; text-decoration: none; }
+.fd-expense-item__amount { font-size: 16px; font-weight: 800; color: var(--color-on-surface); }
+.fd-expense-item__link { font-size: 11px; color: var(--color-primary); text-decoration: none; }
 .fd-expense-item__link:hover { text-decoration: underline; }
 
 /* Add expense form */
 .fd-expense-form { display: flex; flex-direction: column; gap: 14px; }
 .fd-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .fd-form-field { display: flex; flex-direction: column; gap: 6px; }
-.fd-form-label { font-size: 12px; font-weight: 700; color: #374151; }
+.fd-form-label { font-size: 12px; font-weight: 700; color: var(--color-on-surface-variant); }
 .fd-form-input, .fd-form-select {
   padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid #E5E7EB;
-  background: #F9FAFB;
+  border: 1px solid var(--color-outline-variant);
+  background: var(--color-surface-container-low);
   font-size: 13px;
-  color: #111;
+  color: var(--color-on-surface);
   outline: none;
   font-family: inherit;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
-.fd-form-input:focus, .fd-form-select:focus { border-color: #6366F1; background: #fff; }
+.fd-form-input:focus, .fd-form-select:focus { border-color: var(--color-primary); background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,.08); }
 
 .fd-submit-msg {
   display: flex;
@@ -326,15 +328,16 @@
   padding: 14px;
   border-radius: 12px;
   border: none;
-  background: linear-gradient(135deg, #4F46E5, #7C3AED);
+  background: var(--color-primary);
   color: #fff;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
-  transition: opacity 0.2s, transform 0.15s;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 2px 10px rgba(37,99,235,.2);
 }
-.fd-submit-btn:hover { opacity: 0.92; transform: translateY(-1px); }
+.fd-submit-btn:hover { background: #1d4ed8; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(37,99,235,.3); }
 
 /* Loading / error */
 .fund-loading, .fund-error {
@@ -343,7 +346,7 @@
   justify-content: center;
   gap: 10px;
   padding: 64px;
-  color: #9CA3AF;
+  color: var(--color-outline);
   font-size: 14px;
 }
 .fd-spin { animation: fd-spin 1s linear infinite; display: inline-block; }
