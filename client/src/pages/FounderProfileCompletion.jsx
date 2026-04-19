@@ -511,8 +511,6 @@ export default function FounderProfileCompletion({ editing }) {
                   </div>
                 )}
 
-                )}
-
                 <h3 style={{ marginTop: '24px', fontSize: '18px', fontWeight: 600, color: 'var(--color-on-surface)' }}>KYC & Verification Uploads</h3>
                 <p className="profile-form__subtitle">Providing these documents unlocks the "KYC Verified" badge, increasing your visibility to top investors.</p>
                 <div className="profile-row" style={{ marginTop: '16px' }}>
