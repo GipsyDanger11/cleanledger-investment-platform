@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useInvestment } from '../context/InvestmentContext';
+import { isFounderRole } from '../utils/roles';
 import { useAuth } from '../context/AuthContext';
 import './MilestoneTimeline.css';
 
@@ -71,7 +72,7 @@ export default function MilestoneTimeline() {
   const { id: routeStartupId, milestoneId: routeMilestoneId } = useParams();
   const { user } = useAuth();
   const { startups, fetchStartups, castVote, submitMilestoneProof, myStartup, fetchMyStartup } = useInvestment();
-  const isFounder = user?.role === 'startup';
+  const isFounder = isFounderRole(user?.role);
   const hubStartups = useMemo(() => {
     if (!isFounder) return startups;
     if (myStartup) return [myStartup];
@@ -173,18 +174,22 @@ export default function MilestoneTimeline() {
           <p className="mt-header__sub">Progress & Investor Voting (R3)</p>
         </div>
         <div className="mt-topbar__right">
-          <label className="mt-startup-label">
-            Startup
-            <select
-              className="mt-startup-select"
-              value={selectedStartupId}
-              onChange={e => setSelectedStartupId(e.target.value)}
-            >
-              {hubStartups.map(s => (
-                <option key={s._id} value={s._id}>{s.name}</option>
-              ))}
-            </select>
-          </label>
+          {hubStartups.length > 1 ? (
+            <label className="mt-startup-label">
+              Startup
+              <select
+                className="mt-startup-select"
+                value={selectedStartupId}
+                onChange={e => setSelectedStartupId(e.target.value)}
+              >
+                {hubStartups.map(s => (
+                  <option key={s._id} value={s._id}>{s.name}</option>
+                ))}
+              </select>
+            </label>
+          ) : startup?.name ? (
+            <span className="mt-startup-single text-body-md text-secondary">{startup.name}</span>
+          ) : null}
         </div>
       </div>
 
@@ -320,7 +325,7 @@ export default function MilestoneTimeline() {
                   {/* Actions */}
                   <div className="mt-card__actions">
                     {/* Submit Proof button (founder) */}
-                    {user?.role === 'startup' && ['pending','in_progress'].includes(m.status) && (
+                    {isFounderRole(user?.role) && ['pending','in_progress'].includes(m.status) && (
                       <button className="mt-btn mt-btn--primary"
                         onClick={() => { setActiveModal({ type: 'submit', mid: m._id }); setMsg(''); }}>
                         <span className="material-symbols-outlined" style={{ fontSize: 16 }}>upload</span>

@@ -34,7 +34,7 @@ async function ensureInvestorProfile(user) {
  * Ensures FounderProfile exists when a startup is already present (legacy users).
  */
 async function ensureFounderProfile(user) {
-  if (!user || user.role !== 'startup') return null;
+  if (!user || (user.role !== 'startup' && user.role !== 'founder')) return null;
   let fp = await FounderProfile.findOne({ user: user._id });
   if (fp) return fp;
   const startup = await Startup.findOne({ createdBy: user._id }).select('_id').lean();

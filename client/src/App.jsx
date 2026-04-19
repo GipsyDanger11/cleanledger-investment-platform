@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { InvestmentProvider } from './context/InvestmentContext';
 import AppLayout from './components/layout/AppLayout';
+import { isFounderRole } from './utils/roles';
 
 // Pages
 import LandingPage          from './pages/LandingPage';
@@ -30,6 +31,13 @@ function RequireRole({ children, allowedRoles }) {
   const { user, isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Navigate to="/auth" replace />;
   if (allowedRoles && !allowedRoles.includes(user?.role)) return <Navigate to="/access-denied" replace />;
+  return children;
+}
+
+/** Startup Registry is for investors; founders manage their company elsewhere. */
+function InvestorRegistryOnly({ children }) {
+  const { user } = useAuth();
+  if (isFounderRole(user?.role)) return <Navigate to="/dashboard" replace />;
   return children;
 }
 
@@ -64,13 +72,13 @@ export default function App() {
               </RequireRole>
             } />
 
-            {/* ── Authenticated routes — AppLayout (sidebar + bottom nav) ── */}
+            {/* ── Authenticated routes — AppLayout (sidebar) ── */}
             <Route element={<AppLayout />}>
 
               {/* Smart redirect: /dashboard → role-specific dashboard */}
               <Route path="/dashboard" element={<DashboardRouter />} />
               <Route path="/founder-dashboard" element={
-                <RequireRole allowedRoles={['startup']}>
+                <RequireRole allowedRoles={['startup', 'founder']}>
                   <FounderDashboard />
                 </RequireRole>
               } />
@@ -87,9 +95,17 @@ export default function App() {
                 </RequireRole>
               } />
 
-              {/* Shared pages (all roles) */}
-              <Route path="/marketplace"     element={<Marketplace />} />
-              <Route path="/marketplace/:id" element={<StartupDetails />} />
+              {/* Startup Registry — investors (founders redirected to /dashboard) */}
+              <Route path="/marketplace" element={
+                <InvestorRegistryOnly>
+                  <Marketplace />
+                </InvestorRegistryOnly>
+              } />
+              <Route path="/marketplace/:id" element={
+                <InvestorRegistryOnly>
+                  <StartupDetails />
+                </InvestorRegistryOnly>
+              } />
               <Route path="/ledger"          element={<AuditTrail />} />
               <Route path="/settings"        element={<Settings />} />
 
@@ -121,6 +137,6 @@ export default function App() {
 function DashboardRouter() {
   const { user } = useAuth();
   if (user?.role === 'admin')   return <Navigate to="/admin" replace />;
-  if (user?.role === 'startup') return <Navigate to="/founder-dashboard" replace />;
+  if (isFounderRole(user?.role)) return <Navigate to="/founder-dashboard" replace />;
   return <Navigate to="/investor-dashboard" replace />;
 }

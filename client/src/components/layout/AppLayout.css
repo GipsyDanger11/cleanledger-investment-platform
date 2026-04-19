@@ -15,6 +15,10 @@
   /* bottom nav height */
 }
 
+.app-layout--no-bottom-nav .app-layout__main {
+  padding-bottom: 0;
+}
+
 .app-layout__content {
   flex: 1;
   padding: var(--space-8);

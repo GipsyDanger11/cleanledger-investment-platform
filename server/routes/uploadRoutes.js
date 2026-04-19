@@ -7,7 +7,7 @@ const { uploadRegistrationDocs } = require('../controllers/uploadController');
 router.post(
   '/registration',
   protect,
-  restrictTo('startup'),
+  restrictTo('startup', 'founder'),
   registrationUpload.fields([
     { name: 'incorporationProof', maxCount: 1 },
     { name: 'pitchDeck', maxCount: 1 },

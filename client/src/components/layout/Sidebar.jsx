@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../utils/apiClient';
+import { isFounderRole } from '../../utils/roles';
 import './Sidebar.css';
 
 const NOTIF_ICON_MAP = {
@@ -28,7 +29,6 @@ const INVESTOR_NAV = [
 
 const FOUNDER_NAV = [
   { icon: 'dashboard',       label: 'Dashboard',    to: '/dashboard'    },
-  { icon: 'storefront',      label: 'Marketplace',  to: '/marketplace'  },
   { icon: 'savings',         label: 'Funds',        to: '/funds'        },
   { icon: 'flag',            label: 'Milestones',   to: '/milestones'   },
   { icon: 'hub',             label: 'Communicate',  to: '/communicate'  },
@@ -39,7 +39,7 @@ const FOUNDER_NAV = [
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const isFounder = user?.role === 'startup';
+  const isFounder = isFounderRole(user?.role);
   const [notifications, setNotifications] = useState([]);
   const [unread, setUnread] = useState(0);
   const [showDrop, setShowDrop] = useState(false);

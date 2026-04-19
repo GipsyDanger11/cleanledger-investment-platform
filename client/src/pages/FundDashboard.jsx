@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useInvestment } from '../context/InvestmentContext';
+import { isFounderRole } from '../utils/roles';
 import { useAuth } from '../context/AuthContext';
 import './FundDashboard.css';
 
@@ -51,7 +52,7 @@ function ExpenseCategoryBar({ cat, planned, actual }) {
 export default function FundDashboard() {
   const { user } = useAuth();
   const { startups, fetchStartups, addExpense, myStartup, fetchMyStartup } = useInvestment();
-  const isFounder = user?.role === 'startup';
+  const isFounder = isFounderRole(user?.role);
   const hubStartups = useMemo(() => {
     if (!isFounder) return startups;
     if (myStartup) return [myStartup];
@@ -131,15 +132,21 @@ export default function FundDashboard() {
           <p className="fd-header__sub">Transparent Fund Tracking (R2)</p>
         </div>
         <div className="fd-header__controls">
-          <select
-            className="fd-startup-select"
-            value={selectedStartupId}
-            onChange={e => setSelectedStartupId(e.target.value)}
-          >
-            {hubStartups.map(s => (
-              <option key={s._id} value={s._id}>{s.name}</option>
-            ))}
-          </select>
+          {hubStartups.length > 1 ? (
+            <select
+              className="fd-startup-select"
+              value={selectedStartupId}
+              onChange={e => setSelectedStartupId(e.target.value)}
+            >
+              {hubStartups.map(s => (
+                <option key={s._id} value={s._id}>{s.name}</option>
+              ))}
+            </select>
+          ) : (
+            <span className="fd-startup-single text-body-md" style={{ color: '#4B5563', fontWeight: 600 }}>
+              {startup?.name || 'Your startup'}
+            </span>
+          )}
           <span className="fd-verify-badge" style={{
             background: startup.verificationStatus === 'verified' ? '#D1FAE5' : '#FEF9C3',
             color: startup.verificationStatus === 'verified' ? '#065F46' : '#92400E',

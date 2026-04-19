@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useInvestment } from '../context/InvestmentContext';
+import { isFounderRole } from '../utils/roles';
 import { useAuth } from '../context/AuthContext';
 import './Dashboard.css';
 
@@ -39,7 +40,7 @@ export default function Dashboard() {
     markNotificationRead, markAllNotificationsRead, unreadCount,
   } = useInvestment();
 
-  const isFounder = user?.role === 'startup';
+  const isFounder = isFounderRole(user?.role);
 
   // Founder's startup comes from dashboardData (API response)
   const myStartup = isFounder

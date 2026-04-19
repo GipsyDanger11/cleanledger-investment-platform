@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
+import { isFounderRole } from '../utils/roles';
 
 const InvestmentContext = createContext(null);
 
@@ -41,26 +42,36 @@ export function InvestmentProvider({ children }) {
     token || localStorage.getItem('cl_token') || localStorage.getItem('token'),
   [token]);
 
-  // ── Fetch: all startups (Marketplace) ──────────────────────
+  // ── Fetch: investor registry (all startups) or founder's single company only ──
   const fetchStartups = useCallback(async () => {
     try {
+      if (isFounderRole(user?.role)) {
+        const data = await api('GET', '/startups/me/profile', null, tok());
+        const s = data.data || null;
+        setMyStartup(s);
+        setStartups(s ? [s] : []);
+        return;
+      }
       const data = await api('GET', '/startups', null, tok());
       setStartups(data.data || []);
     } catch (e) {
       console.error('fetchStartups:', e.message);
     }
-  }, [tok]);
+  }, [tok, user?.role]);
 
   const fetchMyStartup = useCallback(async () => {
     try {
       const data = await api('GET', '/startups/me/profile', null, tok());
-      setMyStartup(data.data || null);
-      return data.data;
+      const s = data.data || null;
+      setMyStartup(s);
+      if (isFounderRole(user?.role)) setStartups(s ? [s] : []);
+      return s;
     } catch {
       setMyStartup(null);
+      if (isFounderRole(user?.role)) setStartups([]);
       return null;
     }
-  }, [tok]);
+  }, [tok, user?.role]);
 
   // ── Fetch: single startup (full detail) ────────────────────
   const fetchStartup = useCallback(async (id) => {
@@ -108,8 +119,8 @@ export function InvestmentProvider({ children }) {
     try {
       const role = user?.role;
       let path = '/dashboard/investor';
-      if (role === 'startup') path = '/dashboard/founder';
-      if (role === 'admin')   path = '/dashboard/admin';
+      if (isFounderRole(role)) path = '/dashboard/founder';
+      if (role === 'admin') path = '/dashboard/admin';
       const data = await api('GET', path, null, tok());
       setDashboardData(data.data || null);
       return data.data;
@@ -224,9 +235,7 @@ export function InvestmentProvider({ children }) {
           fetchStartups(),
           fetchDashboard(),
           fetchNotifications(),
-          // Only load investments for investors (startup role doesn't have them)
-          user?.role !== 'startup' ? fetchInvestments() : Promise.resolve(),
-          user?.role === 'startup' ? fetchMyStartup() : Promise.resolve(),
+          !isFounderRole(user?.role) ? fetchInvestments() : Promise.resolve(),
         ]);
       } catch (e) {
         setError(e.message);

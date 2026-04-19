@@ -82,7 +82,7 @@ userSchema.methods.calculateProfileScore = function () {
   if (this.organization || this.companyName) score += 20;
   if (this.linkedIn) score += 15;
 
-  if (this.role === 'startup') {
+  if (this.role === 'startup' || this.role === 'founder') {
     if (this.fundingGoal) score += 10;
     if (this.sector) score += 10;
     if (this.teamMembers && this.teamMembers.length > 0) score += 10;

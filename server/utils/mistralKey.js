@@ -131,7 +131,7 @@ function logMistralStartup() {
     .catch(() => {
       clearTimeout(tid);
       console.warn(
-        `[jarvis] Python JARVIS: not reachable at ${url} — start: cd server/ai_service && py app.py`,
+        `[jarvis] Python JARVIS: not reachable at ${url} — run "npm run dev" from repo root (starts Flask on 5001), or "npm run ai-service --prefix server". Set AI_SERVICE_PYTHON in server/.env if needed.`,
       );
     });
 }

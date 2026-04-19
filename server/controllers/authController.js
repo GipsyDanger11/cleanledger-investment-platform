@@ -102,7 +102,7 @@ const login = async (req, res, next) => {
         organization = inv.organization;
         entityType = inv.entityType;
       }
-    } else if (user.role === 'startup') {
+    } else if (user.role === 'startup' || user.role === 'founder') {
       await ensureFounderProfile(user);
       const startupProfile = await Startup.findOne({ createdBy: user._id })
         .select('profileCompletionScore')
@@ -158,7 +158,7 @@ const getMe = async (req, res) => {
       organization = inv.organization;
       entityType = inv.entityType;
     }
-  } else if (req.user.role === 'startup') {
+  } else if (req.user.role === 'startup' || req.user.role === 'founder') {
     await ensureFounderProfile(req.user);
     const startupProfile = await Startup.findOne({ createdBy: req.user._id })
       .select('profileCompletionScore')

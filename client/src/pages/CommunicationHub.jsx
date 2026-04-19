@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useInvestment } from '../context/InvestmentContext';
+import { isFounderRole } from '../utils/roles';
 import { useAuth } from '../context/AuthContext';
 import './CommunicationHub.css';
 
@@ -70,7 +71,7 @@ export default function CommunicationHub() {
   const [submitting, setSubmitting]       = useState(false);
   const [notifFilter, setNotifFilter]     = useState('all');
 
-  const isFounder = user?.role === 'startup';
+  const isFounder = isFounderRole(user?.role);
   const hubStartups = useMemo(() => {
     if (!isFounder) return startups;
     if (myStartup) return [myStartup];

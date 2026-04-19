@@ -12,6 +12,9 @@ export default function AppLayout() {
 
   if (!isAuthenticated) return <Navigate to="/auth" replace />;
 
+  /** Founders use role `startup`; investors use `investor`. Left rail already covers nav. */
+  const showBottomNav = !['investor', 'startup', 'founder'].includes(user?.role);
+
   useEffect(() => {
     if (!user) return;
     if (user.role === 'admin') return;
@@ -19,7 +22,7 @@ export default function AppLayout() {
   }, [user?.role, user?.profileComplete]);
 
   return (
-    <div className="app-layout">
+    <div className={`app-layout${showBottomNav ? '' : ' app-layout--no-bottom-nav'}`}>
       <Sidebar />
       <main className="app-layout__main">
         <div className="app-layout__content">
@@ -44,7 +47,7 @@ export default function AppLayout() {
           <Outlet />
         </div>
       </main>
-      <BottomNav />
+      {showBottomNav ? <BottomNav /> : null}
     </div>
   );
 }

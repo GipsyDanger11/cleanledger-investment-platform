@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js",
+    "dev": "concurrently -n api,jarvis -c blue,green \"nodemon server.js\" \"node scripts/ai-service-spawn.js\"",
+    "dev:api": "nodemon server.js",
+    "ai-service": "node scripts/ai-service-spawn.js",
     "seed": "node seed.js"
   },
   "keywords": [
@@ -30,6 +32,7 @@
     "multer": "^2.1.1"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "nodemon": "^3.1.4"
   }
 }

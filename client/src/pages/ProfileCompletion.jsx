@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { isFounderRole } from '../utils/roles';
 import InvestorProfileCompletion from './InvestorProfileCompletion';
 import FounderProfileCompletion from './FounderProfileCompletion';
 
@@ -12,6 +13,6 @@ export default function ProfileCompletion() {
   if (!user) return null;
   if (user.role === 'admin') return <Navigate to="/admin" replace />;
   if (user.role === 'investor') return <InvestorProfileCompletion />;
-  if (user.role === 'startup') return <FounderProfileCompletion />;
+  if (isFounderRole(user.role)) return <FounderProfileCompletion />;
   return <Navigate to="/dashboard" replace />;
 }

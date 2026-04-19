@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../utils/apiClient';
+import { isFounderRole } from '../utils/roles';
 import './ProfileCompletion.css';
 
 const STEPS = [
@@ -26,7 +27,7 @@ export default function FounderProfileCompletion() {
       navigate('/admin', { replace: true });
       return;
     }
-    if (user.role !== 'startup') {
+    if (!isFounderRole(user.role)) {
       navigate('/dashboard', { replace: true });
       return;
     }
