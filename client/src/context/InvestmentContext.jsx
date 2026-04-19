@@ -295,13 +295,8 @@ export function InvestmentProvider({ children }) {
           fetchStartups(),
           fetchDashboard(),
           fetchNotifications(),
-<<<<<<< HEAD
+          fetchWallet(),
           !isFounderRole(user?.role) ? fetchInvestments() : Promise.resolve(),
-=======
-          fetchWallet(), // both startup and investors need it
-          user?.role !== 'startup' ? fetchInvestments() : Promise.resolve(),
-          user?.role === 'startup' ? fetchMyStartup() : Promise.resolve(),
->>>>>>> 6b47e414fbeb2c223da83e12b9da8d28cd99dd70
         ]);
       } catch (e) {
         setError(e.message);
@@ -311,7 +306,7 @@ export function InvestmentProvider({ children }) {
       }
     };
     load();
-  }, [isAuthenticated, user?.role, tok, fetchStartups, fetchMyStartup, fetchDashboard, fetchNotifications, fetchInvestments]);
+  }, [isAuthenticated, user?.role, tok, fetchStartups, fetchMyStartup, fetchDashboard, fetchNotifications, fetchInvestments, fetchWallet]);
 
   // ── Derived values ──────────────────────────────────────────
   const portfolioValue   = investments.reduce((s, i) => s + (i.amount || 0), 0);

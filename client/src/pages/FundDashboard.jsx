@@ -52,13 +52,8 @@ function ExpenseCategoryBar({ cat, planned, actual }) {
 
 export default function FundDashboard() {
   const { user } = useAuth();
-<<<<<<< HEAD
-  const { startups, fetchStartups, addExpense, myStartup, fetchMyStartup } = useInvestment();
-  const isFounder = isFounderRole(user?.role);
-=======
   const { startups, fetchStartups, addExpense, myStartup, fetchMyStartup, walletBalance } = useInvestment();
-  const isFounder = user?.role === 'startup';
->>>>>>> 6b47e414fbeb2c223da83e12b9da8d28cd99dd70
+  const isFounder = isFounderRole(user?.role);
   const hubStartups = useMemo(() => {
     if (!isFounder) return startups;
     if (myStartup) return [myStartup];
