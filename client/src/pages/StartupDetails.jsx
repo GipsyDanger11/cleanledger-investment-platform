@@ -343,10 +343,12 @@ export default function StartupDetails() {
                     <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>verified_user</span>
                     <div>
                       <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>Business Registration Certificate</p>
-                      <a href={startup.verificationDocuments.businessRegistrationUrl} target="_blank" rel="noopener noreferrer" className="text-label-sm text-primary" style={{ margin: 0, textDecoration: 'none' }}>View Document</a>
+                      <p className="text-label-sm text-secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}><span className="material-symbols-outlined" style={{ fontSize: '14px' }}>lock</span> Securely held in vault</p>
                     </div>
                   </div>
-                  <span className="chip chip--success" style={{ fontSize: '0.6rem' }}>✓ Uploaded</span>
+                  <span className={`chip ${startup.verificationStatus === 'verified' ? 'chip--success' : ''}`} style={{ fontSize: '0.6rem', background: startup.verificationStatus !== 'verified' ? '#FEF3C7' : undefined, color: startup.verificationStatus !== 'verified' ? '#B45309' : undefined }}>
+                    {startup.verificationStatus === 'verified' ? '✓ Verified' : 'Pending Review'}
+                  </span>
                 </div>
               )}
               {startup.verificationDocuments?.gstNumberUrl && (
@@ -355,10 +357,12 @@ export default function StartupDetails() {
                     <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>receipt_long</span>
                     <div>
                       <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>GST Number</p>
-                      <a href={startup.verificationDocuments.gstNumberUrl} target="_blank" rel="noopener noreferrer" className="text-label-sm text-primary" style={{ margin: 0, textDecoration: 'none' }}>View Document</a>
+                      <p className="text-label-sm text-secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}><span className="material-symbols-outlined" style={{ fontSize: '14px' }}>lock</span> Securely held in vault</p>
                     </div>
                   </div>
-                  <span className="chip chip--success" style={{ fontSize: '0.6rem' }}>✓ Uploaded</span>
+                  <span className={`chip ${startup.verificationStatus === 'verified' ? 'chip--success' : ''}`} style={{ fontSize: '0.6rem', background: startup.verificationStatus !== 'verified' ? '#FEF3C7' : undefined, color: startup.verificationStatus !== 'verified' ? '#B45309' : undefined }}>
+                    {startup.verificationStatus === 'verified' ? '✓ Verified' : 'Pending Review'}
+                  </span>
                 </div>
               )}
               {startup.verificationDocuments?.founderIdUrl && (
@@ -367,10 +371,12 @@ export default function StartupDetails() {
                     <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>badge</span>
                     <div>
                       <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>Founder Aadhaar / PAN</p>
-                      <a href={startup.verificationDocuments.founderIdUrl} target="_blank" rel="noopener noreferrer" className="text-label-sm text-primary" style={{ margin: 0, textDecoration: 'none' }}>View Document</a>
+                      <p className="text-label-sm text-secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}><span className="material-symbols-outlined" style={{ fontSize: '14px' }}>lock</span> Securely held in vault</p>
                     </div>
                   </div>
-                  <span className="chip chip--success" style={{ fontSize: '0.6rem' }}>✓ Uploaded</span>
+                  <span className={`chip ${startup.verificationStatus === 'verified' ? 'chip--success' : ''}`} style={{ fontSize: '0.6rem', background: startup.verificationStatus !== 'verified' ? '#FEF3C7' : undefined, color: startup.verificationStatus !== 'verified' ? '#B45309' : undefined }}>
+                    {startup.verificationStatus === 'verified' ? '✓ Verified' : 'Pending Review'}
+                  </span>
                 </div>
               )}
               {startup.verificationDocuments?.pitchDeckUrl && (
@@ -379,10 +385,12 @@ export default function StartupDetails() {
                     <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>presentation</span>
                     <div>
                       <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>Pitch Deck</p>
-                      <a href={startup.verificationDocuments.pitchDeckUrl} target="_blank" rel="noopener noreferrer" className="text-label-sm text-primary" style={{ margin: 0, textDecoration: 'none' }}>View Document</a>
+                      <p className="text-label-sm text-secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}><span className="material-symbols-outlined" style={{ fontSize: '14px' }}>lock</span> Securely held in vault</p>
                     </div>
                   </div>
-                  <span className="chip chip--success" style={{ fontSize: '0.6rem' }}>✓ Uploaded</span>
+                  <span className={`chip ${startup.verificationStatus === 'verified' ? 'chip--success' : ''}`} style={{ fontSize: '0.6rem', background: startup.verificationStatus !== 'verified' ? '#FEF3C7' : undefined, color: startup.verificationStatus !== 'verified' ? '#B45309' : undefined }}>
+                    {startup.verificationStatus === 'verified' ? '✓ Verified' : 'Pending Review'}
+                  </span>
                 </div>
               )}
               {startup.verificationDocuments?.bankStatementUrl && (
@@ -391,10 +399,12 @@ export default function StartupDetails() {
                     <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>account_balance</span>
                     <div>
                       <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>Bank Statement</p>
-                      <a href={startup.verificationDocuments.bankStatementUrl} target="_blank" rel="noopener noreferrer" className="text-label-sm text-primary" style={{ margin: 0, textDecoration: 'none' }}>View Document</a>
+                      <p className="text-label-sm text-secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}><span className="material-symbols-outlined" style={{ fontSize: '14px' }}>lock</span> Securely held in vault</p>
                     </div>
                   </div>
-                  <span className="chip chip--success" style={{ fontSize: '0.6rem' }}>✓ Uploaded</span>
+                  <span className={`chip ${startup.verificationStatus === 'verified' ? 'chip--success' : ''}`} style={{ fontSize: '0.6rem', background: startup.verificationStatus !== 'verified' ? '#FEF3C7' : undefined, color: startup.verificationStatus !== 'verified' ? '#B45309' : undefined }}>
+                    {startup.verificationStatus === 'verified' ? '✓ Verified' : 'Pending Review'}
+                  </span>
                 </div>
               )}
               {(!startup.verificationDocuments || Object.keys(startup.verificationDocuments).length === 0) && (
