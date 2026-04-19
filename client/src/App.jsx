@@ -5,7 +5,7 @@ import AppLayout from './components/layout/AppLayout';
 import { isFounderRole } from './utils/roles';
 
 // Pages
-import LandingPage          from './pages/LandingPage';
+import FuturisticLanding    from './pages/futuristic-landing/FuturisticLanding';
 import AuthPage             from './pages/AuthPage';
 import ProfileCompletion    from './pages/ProfileCompletion';
 import FounderProfileCompletion from './pages/FounderProfileCompletion';
@@ -57,7 +57,7 @@ export default function App() {
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             {/* ── Public ── */}
-            <Route path="/"              element={<LandingPage />} />
+            <Route path="/"              element={<FuturisticLanding />} />
             <Route path="/auth"          element={<AuthPage />} />
             <Route path="/profile-setup" element={<ProfileSetupRoute />} />
             <Route path="/access-denied" element={<AccessDenied />} />
