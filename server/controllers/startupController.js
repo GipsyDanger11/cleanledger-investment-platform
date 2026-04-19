@@ -8,6 +8,9 @@ const {
 } = require('../utils/registrationMappers');
 const { analyzePitchText } = require('../services/pitchMistral');
 const { analyzeRedFlags } = require('../services/redFlagMistral');
+const { contract } = require('../utils/contract');
+const { ethers } = require('ethers');
+
 
 const STARTUP_WRITE_FIELDS = [
   'name',
@@ -60,6 +63,32 @@ exports.createStartup = catchAsync(async (req, res) => {
   const startup = await Startup.create(payload);
   startup.calculateProfileScore();
   await startup.save();
+
+  // On-chain registration
+  if (contract) {
+    try {
+      const tx = await contract.createStartup(
+        startup._id.toString(),
+        startup.name,
+        startup.sector,
+        startup.geography,
+        startup.description,
+        ethers.parseUnits(startup.fundingTarget.toString(), 0),
+        ethers.parseUnits((startup.fundAllocation?.tech?.planned || 0).toString(), 0),
+        ethers.parseUnits((startup.fundAllocation?.marketing?.planned || 0).toString(), 0),
+        ethers.parseUnits((startup.fundAllocation?.operations?.planned || 0).toString(), 0),
+        ethers.parseUnits((startup.fundAllocation?.legal?.planned || 0).toString(), 0)
+      );
+      await tx.wait();
+      console.log(`Startup registered on-chain: ${tx.hash}`);
+    } catch (err) {
+      console.error('Blockchain registration failed:', err);
+    }
+  } else {
+    console.warn('Blockchain registration skipped: CONTRACT_ADDRESS not configured');
+  }
+
+
 
   await FounderProfile.findOneAndUpdate(
     { user: req.user._id },
@@ -114,6 +143,19 @@ exports.getStartup = catchAsync(async (req, res) => {
     .populate('createdBy', 'name email avatarUrl')
     .lean();
   if (!startup) return apiError(res, 404, 'Startup not found');
+
+  // Fetch verified data from Blockchain
+  try {
+    const chainData = await contract.getStartup(startup._id.toString());
+    if (chainData.exists) {
+      startup.totalRaisedOnChain = ethers.formatUnits(chainData.totalRaised, 0);
+      startup.trustScoreOnChain = chainData.trustScore.toString();
+      startup.verificationStatusOnChain = chainData.verificationStatus;
+    }
+  } catch (err) {
+    console.log('Blockchain fetch failed, using DB fallback');
+  }
+
 
   const FounderProfile = require('../models/FounderProfile');
   const founderProfile = await FounderProfile.findOne({ user: startup.createdBy }).lean();
@@ -338,9 +380,19 @@ exports.castVote = catchAsync(async (req, res) => {
   const approved = m.votes.filter(v => v.approved).length;
   const pct = total > 0 ? (approved / total) * 100 : 0;
 
-  // Auto-resolve if window passed
-  if (new Date() >= new Date(m.voteDeadline)) {
-    startup.resolveMilestoneVotes(m._id);
+  // Auto-resolve if window passed or quorum met
+  const previousStatus = m.status;
+  if (new Date() >= new Date(m.voteDeadline) || pct >= 60) {
+    const resolution = startup.resolveMilestoneVotes(m._id);
+    if (resolution && resolution.voteResult === 'passed' && previousStatus !== 'verified') {
+      const trancheAmount = (m.tranchePct / 100) * (startup.totalRaised || 0);
+      if (trancheAmount > 0 && startup.createdBy) {
+        const User = require('../models/User');
+        await User.findByIdAndUpdate(startup.createdBy, {
+          $inc: { walletBalance: trancheAmount }
+        });
+      }
+    }
   }
 
   await startup.save();

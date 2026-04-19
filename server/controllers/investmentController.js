@@ -11,6 +11,8 @@ const Startup    = require('../models/Startup');
 const Investment = require('../models/Investment');
 const { createBlock } = require('../utils/blockchain');
 const { encrypt, homomorphicAdd, decryptSum } = require('../utils/fhe');
+const { contract } = require('../utils/contract');
+const { ethers } = require('ethers');
 
 const catchAsync = fn => (req, res, next) => fn(req, res, next).catch(next);
 const apiError   = (res, status, msg) => res.status(status).json({ success: false, message: msg });
@@ -51,10 +53,24 @@ exports.invest = catchAsync(async (req, res) => {
     $inc: { totalRaised: investAmount, backers: 1 },
   });
 
-  // 5.5. Instantly transfer virtual funds to the Startup Founder's Wallet
-  if (startup.createdBy) {
+  // 5.5. Transfer funds to Startup Founder's Wallet based on unlocked proportions.
+  // 1. Any unallocated percentage is available immediately.
+  // 2. Any percentage mapped to already 'verified' milestones is available immediately.
+  let releasedPct = 0;
+  let totalAllocated = 0;
+  for (const m of startup.milestones || []) {
+    totalAllocated += (m.tranchePct || 0);
+    if (m.status === 'verified') {
+      releasedPct += (m.tranchePct || 0);
+    }
+  }
+  const unallocatedPct = Math.max(0, 100 - totalAllocated);
+  const totalImmediatePct = releasedPct + unallocatedPct;
+  const immediateTransfer = (totalImmediatePct / 100) * investAmount;
+
+  if (startup.createdBy && immediateTransfer > 0) {
     await User.findByIdAndUpdate(startup.createdBy, {
-      $inc: { walletBalance: investAmount },
+      $inc: { walletBalance: immediateTransfer },
     });
   }
 
@@ -70,7 +86,29 @@ exports.invest = catchAsync(async (req, res) => {
   const { ciphertext: encryptedAmount, noise: encryptedNoise } =
     encrypt(investAmount, req.user._id.toString(), startupId.toString());
 
-  // 7. Create Investment record
+  // 7. Create Investment record on Blockchain
+  let tx;
+  if (contract) {
+    try {
+      tx = await contract.invest(
+        crypto.randomBytes(16).toString('hex'), // temp ID for chain
+        startupId.toString(),
+        ethers.parseUnits(investAmount.toString(), 0), // Assuming INR corresponds to units
+        trancheTag || `Round — ${startup.name}`,
+        encryptedAmount,
+        { value: 0 } // No MATIC sent for virtual wallet migration, or handle actual payments here
+      );
+      await tx.wait();
+      console.log(`Blockchain transaction confirmed: ${tx.hash}`);
+    } catch (err) {
+      console.error('Blockchain transaction failed:', err);
+      // Rollback DB wallet if possible, but for hackathon we log error
+    }
+  } else {
+    console.warn('Blockchain features disabled: CONTRACT_ADDRESS not configured');
+  }
+
+
   const investment = await Investment.create({
     investor:       req.user._id,
     startup:        startupId,
@@ -85,6 +123,7 @@ exports.invest = catchAsync(async (req, res) => {
     status:         'active',
     encryptedAmount,
     encryptedNoise,
+    blockHash:      tx?.hash || '',
   });
 
   // 8. Write SHA-256 hash chain block

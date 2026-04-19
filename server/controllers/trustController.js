@@ -1,6 +1,8 @@
 const Startup      = require('../models/Startup');
 const Notification = require('../models/Notification');
 const Investment   = require('../models/Investment');
+const { contract } = require('../utils/contract');
+
 
 const catchAsync = fn => (req, res, next) => fn(req, res, next).catch(next);
 const apiError   = (res, status, msg) => res.status(status).json({ success: false, message: msg });
@@ -28,6 +30,25 @@ exports.computeTrustScore = catchAsync(async (req, res) => {
     `/funds/${startup._id}`,
     startup._id
   );
+
+  // Sync Trust Score to Blockchain
+  if (contract) {
+    try {
+      const tx = await contract.updateTrustScore(
+        startup._id.toString(),
+        result.trustScore,
+        result.riskLevel
+      );
+      await tx.wait();
+      console.log(`Trust Score synced on-chain: ${tx.hash}`);
+    } catch (err) {
+      console.error('Blockchain trust score sync failed:', err);
+    }
+  } else {
+    console.warn('Blockchain score sync skipped: CONTRACT_ADDRESS not configured');
+  }
+
+
 
   res.json({ success: true, data: result });
 });
