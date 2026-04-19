@@ -24,7 +24,6 @@ const INVESTOR_NAV = [
   { icon: 'savings',         label: 'Funds',        to: '/funds'        },
   { icon: 'flag',            label: 'Milestones',   to: '/milestones'   },
   { icon: 'hub',             label: 'Communicate',  to: '/communicate'  },
-  { icon: 'settings',        label: 'Settings',     to: '/settings'     },
 ];
 
 const FOUNDER_NAV = [
@@ -33,7 +32,6 @@ const FOUNDER_NAV = [
   { icon: 'flag',            label: 'Milestones',   to: '/milestones'   },
   { icon: 'hub',             label: 'Communicate',  to: '/communicate'  },
   { icon: 'account_balance', label: 'Ledger',       to: '/ledger'       },
-  { icon: 'settings',        label: 'Settings',     to: '/settings'     },
 ];
 
 export default function Sidebar() {

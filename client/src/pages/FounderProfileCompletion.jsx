@@ -634,7 +634,7 @@ export default function FounderProfileCompletion({ editing }) {
                     </div>
                     <div className="profile-field" style={{marginBottom:'10px'}}>
                       <label className="profile-field__label">Success Criteria</label>
-                      <input className="profile-field__input" placeholder="e.g. 100 paying customers, $50k MRR"
+                      <input className="profile-field__input" placeholder="e.g. 100 paying customers, ₹40L MRR"
                         value={m.successCriteria} onChange={e => updateMilestone(i,'successCriteria',e.target.value)}/>
                     </div>
                     <div className="profile-row">

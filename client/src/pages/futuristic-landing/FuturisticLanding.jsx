@@ -55,7 +55,7 @@ const STEPS = [
 ];
 
 const METRICS = [
-  { value: '$240M+', label: 'Capital tracked' },
+  { value: '₹1,920Cr+', label: 'Capital tracked' },
   { value: '3,800+', label: 'Audit events logged' },
   { value: '98%',    label: 'On-time milestone rate' },
   { value: '62',     label: 'Verified startups' },
@@ -240,7 +240,7 @@ export default function FuturisticLanding() {
               <div className="fl-dash-mock__body">
                 <div className="fl-dash-kpi-row">
                   {[
-                    { label: 'Total Raised',    value: '$4.2M',  delta: '+12%',  up: true  },
+                    { label: 'Total Raised',    value: '₹33.6Cr', delta: '+12%',  up: true  },
                     { label: 'Trust Score',     value: '87/100', delta: '+3pts', up: true  },
                     { label: 'Variance Alerts', value: '0',      delta: 'Clean', up: true  },
                   ].map((k) => (
@@ -280,7 +280,7 @@ export default function FuturisticLanding() {
                   Recent Audit Events
                 </div>
                 {[
-                  { txt: 'Capital release — $800K → Aura Wind Energy',   time: '2h ago' },
+                  { txt: 'Capital release — ₹6.4Cr → Aura Wind Energy',   time: '2h ago' },
                   { txt: 'Milestone 2 approved — 78% DAO vote',           time: '1d ago' },
                   { txt: 'KYB verified — HydroClear Technologies',        time: '2d ago' },
                 ].map((e, i) => (

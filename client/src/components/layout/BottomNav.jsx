@@ -5,7 +5,7 @@ const BOTTOM_NAV_ITEMS = [
   { icon: 'home',         label: 'Home',   to: '/dashboard'   },
   { icon: 'search',       label: 'Market', to: '/marketplace' },
   { icon: 'history_edu',  label: 'Ledger', to: '/ledger'      },
-  { icon: 'person',       label: 'User',   to: '/settings'    },
+  { icon: 'pie_chart',    label: 'Funds',  to: '/funds'       },
 ];
 
 export default function BottomNav() {

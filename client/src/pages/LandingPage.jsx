@@ -37,19 +37,19 @@ const HOW_IT_WORKS_STEPS = [
 ];
 
 const LEDGER_EVENTS = [
-  { type: 'Capital Release',     amount: '$800,000',   entity: 'Aura Wind Energy',        time: '2s ago'  },
-  { type: 'Funding Allocation',  amount: '$500,000',   entity: 'Whitfield Capital',        time: '14s ago' },
-  { type: 'KYB Verified',        amount: '—',          entity: 'HydroClear Technologies',  time: '1m ago'  },
-  { type: 'DAO Vote Passed',     amount: '$2.1M',      entity: 'ThermaVault Phase 3',      time: '3m ago'  },
-  { type: 'Capital Release',     amount: '$1,000,000', entity: 'Verdant Carbon Labs',      time: '7m ago'  },
-  { type: 'Inter-Account',       amount: '$250,000',   entity: 'Portfolio Rebalance',      time: '11m ago' },
+  { type: 'Capital Release',     amount: '₹6,40,00,000',   entity: 'Aura Wind Energy',        time: '2s ago'  },
+  { type: 'Funding Allocation',  amount: '₹4,00,00,000',   entity: 'Whitfield Capital',        time: '14s ago' },
+  { type: 'KYB Verified',        amount: '—',               entity: 'HydroClear Technologies',  time: '1m ago'  },
+  { type: 'DAO Vote Passed',     amount: '₹16.8Cr',         entity: 'ThermaVault Phase 3',      time: '3m ago'  },
+  { type: 'Capital Release',     amount: '₹8,00,00,000',   entity: 'Verdant Carbon Labs',      time: '7m ago'  },
+  { type: 'Inter-Account',       amount: '₹2,00,00,000',   entity: 'Portfolio Rebalance',      time: '11m ago' },
 ];
 
 const STATS = [
-  { label: 'Total Managed Value',    value: '$284.7M' },
-  { label: 'Verified Startups',      value: '142'     },
-  { label: 'DAO Votes Resolved',     value: '1,089'   },
-  { label: 'Avg Trust Score',        value: '84.3'    },
+  { label: 'Total Managed Value',    value: '₹2,280Cr' },
+  { label: 'Verified Startups',      value: '142'       },
+  { label: 'DAO Votes Resolved',     value: '1,089'     },
+  { label: 'Avg Trust Score',        value: '84.3'      },
 ];
 
 export default function LandingPage() {
@@ -260,12 +260,12 @@ export default function LandingPage() {
           <p className="text-body-md text-secondary" style={{ marginTop: 'var(--space-2)', marginBottom: 'var(--space-8)' }}>Live breakdown of capital deployed across verified sectors.</p>
           <div className="landing__alloc-bars">
             {[
-              { sector: 'Clean Energy',     pct: 38, amount: '$108.2M' },
-              { sector: 'Water Tech',       pct: 22, amount: '$62.6M'  },
-              { sector: 'Thermal Storage',  pct: 18, amount: '$51.2M'  },
-              { sector: 'Solar Tech',       pct: 12, amount: '$34.2M'  },
-              { sector: 'Carbon Markets',   pct: 7,  amount: '$19.9M'  },
-              { sector: 'Environmental IoT',pct: 3,  amount: '$8.5M'   },
+              { sector: 'Clean Energy',     pct: 38, amount: '₹866Cr' },
+              { sector: 'Water Tech',       pct: 22, amount: '₹501Cr' },
+              { sector: 'Thermal Storage',  pct: 18, amount: '₹410Cr' },
+              { sector: 'Solar Tech',       pct: 12, amount: '₹274Cr' },
+              { sector: 'Carbon Markets',   pct: 7,  amount: '₹159Cr' },
+              { sector: 'Environmental IoT',pct: 3,  amount: '₹68Cr'  },
             ].map((row) => (
               <div key={row.sector} className="landing__alloc-row">
                 <span className="text-label-md" style={{ width: '170px', color: 'var(--color-on-surface)' }}>{row.sector}</span>

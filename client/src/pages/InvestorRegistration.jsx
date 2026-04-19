@@ -141,11 +141,11 @@ export default function InvestorRegistration() {
                 <label>Typical Investment Range</label>
                 <select className="ir-input" value={form.investmentRange} onChange={e => update('investmentRange', e.target.value)}>
                   <option value="">Select range…</option>
-                  <option value="under_50k">Under $50K</option>
-                  <option value="50k_250k">$50K – $250K</option>
-                  <option value="250k_1m">$250K – $1M</option>
-                  <option value="1m_5m">$1M – $5M</option>
-                  <option value="over_5m">Over $5M</option>
+                  <option value="under_50k">Under ₹5L</option>
+                  <option value="50k_250k">₹5L – ₹25L</option>
+                  <option value="250k_1m">₹25L – ₹80L</option>
+                  <option value="1m_5m">₹80L – ₹4Cr</option>
+                  <option value="over_5m">Over ₹4Cr</option>
                 </select>
               </div>
               <div className="ir-field">

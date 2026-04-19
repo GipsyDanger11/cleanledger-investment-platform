@@ -7,7 +7,7 @@ const MOCK_STATS = {
   userCount: 47,
   startupCount: 12,
   investmentCount: 34,
-  totalFundsRaised: '$4.2M',
+  totalFundsRaised: '₹33.6Cr',
   pendingVerifications: 3,
   activeInvestors: 28,
 };
@@ -54,7 +54,7 @@ const AdminDashboard = () => {
     { icon: '👥', value: stats.userCount, label: 'Total Users' },
     { icon: '🚀', value: stats.startupCount, label: 'Startups' },
     { icon: '💰', value: stats.investmentCount, label: 'Investments' },
-    { icon: '📊', value: stats.totalFundsRaised || '$4.2M', label: 'Funds Raised' },
+    { icon: '📊', value: stats.totalFundsRaised || '₹33.6Cr', label: 'Funds Raised' },
     { icon: '⏳', value: stats.pendingVerifications || 3, label: 'Pending Verifications' },
     { icon: '🏦', value: stats.activeInvestors || 28, label: 'Active Investors' },
   ];

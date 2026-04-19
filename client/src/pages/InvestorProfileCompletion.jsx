@@ -17,11 +17,11 @@ const ENTITY_OPTIONS = [
 
 const RANGE_OPTIONS = [
   { value: '', label: 'Select…' },
-  { value: 'under_50k', label: 'Under $50K' },
-  { value: '50k_250k', label: '$50K – $250K' },
-  { value: '250k_1m', label: '$250K – $1M' },
-  { value: '1m_5m', label: '$1M – $5M' },
-  { value: 'over_5m', label: 'Over $5M' },
+  { value: 'under_50k', label: 'Under ₹5L' },
+  { value: '50k_250k', label: '₹5L – ₹25L' },
+  { value: '250k_1m', label: '₹25L – ₹80L' },
+  { value: '1m_5m', label: '₹80L – ₹4Cr' },
+  { value: 'over_5m', label: 'Over ₹4Cr' },
 ];
 
 const FOCUS_OPTIONS = [
