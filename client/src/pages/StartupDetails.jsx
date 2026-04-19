@@ -337,81 +337,81 @@ export default function StartupDetails() {
           <div className="card">
             <h2 className="text-title" style={{ marginBottom: 'var(--space-4)' }}>Verification Documents</h2>
             <div className="startup-details__docs">
-              {startup.verificationDocuments?.businessRegistrationUrl && (
-                <div className="startup-details__doc" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid var(--color-outline-variant)', borderRadius: '8px', marginBottom: '8px' }}>
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>verified_user</span>
-                    <div>
-                      <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>Business Registration Certificate</p>
-                      <p className="text-label-sm text-secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}><span className="material-symbols-outlined" style={{ fontSize: '14px' }}>lock</span> Securely held in vault</p>
+              {startup.verificationStatus === 'verified' ? (
+                <div style={{ textAlign: 'center', padding: '24px 0', color: '#059669', background: '#ecfdf5', borderRadius: '8px', border: '1px solid #a7f3d0' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '32px', marginBottom: '8px' }}>shield_lock</span>
+                  <p className="text-body-md" style={{ margin: 0, fontWeight: 600 }}>Zero-Knowledge Verified</p>
+                  <p className="text-label-sm" style={{ margin: '4px 0 0', opacity: 0.8 }}>Identity and financials cryptographically proven & vaulted</p>
+                </div>
+              ) : (
+                <>
+                  {startup.verificationDocuments?.businessRegistrationUrl && (
+                    <div className="startup-details__doc" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid var(--color-outline-variant)', borderRadius: '8px', marginBottom: '8px' }}>
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>verified_user</span>
+                        <div>
+                          <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>Business Registration Certificate</p>
+                          <p className="text-label-sm text-secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}><span className="material-symbols-outlined" style={{ fontSize: '14px' }}>lock</span> Securely held in vault</p>
+                        </div>
+                      </div>
+                      <span className="chip" style={{ fontSize: '0.6rem', background: '#FEF3C7', color: '#B45309' }}>Pending Review</span>
                     </div>
-                  </div>
-                  <span className={`chip ${startup.verificationStatus === 'verified' ? 'chip--success' : ''}`} style={{ fontSize: '0.6rem', background: startup.verificationStatus !== 'verified' ? '#FEF3C7' : undefined, color: startup.verificationStatus !== 'verified' ? '#B45309' : undefined }}>
-                    {startup.verificationStatus === 'verified' ? '✓ Verified' : 'Pending Review'}
-                  </span>
-                </div>
-              )}
-              {startup.verificationDocuments?.gstNumberUrl && (
-                <div className="startup-details__doc" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid var(--color-outline-variant)', borderRadius: '8px', marginBottom: '8px' }}>
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>receipt_long</span>
-                    <div>
-                      <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>GST Number</p>
-                      <p className="text-label-sm text-secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}><span className="material-symbols-outlined" style={{ fontSize: '14px' }}>lock</span> Securely held in vault</p>
+                  )}
+                  {startup.verificationDocuments?.gstNumberUrl && (
+                    <div className="startup-details__doc" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid var(--color-outline-variant)', borderRadius: '8px', marginBottom: '8px' }}>
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>receipt_long</span>
+                        <div>
+                          <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>GST Number</p>
+                          <p className="text-label-sm text-secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}><span className="material-symbols-outlined" style={{ fontSize: '14px' }}>lock</span> Securely held in vault</p>
+                        </div>
+                      </div>
+                      <span className="chip" style={{ fontSize: '0.6rem', background: '#FEF3C7', color: '#B45309' }}>Pending Review</span>
                     </div>
-                  </div>
-                  <span className={`chip ${startup.verificationStatus === 'verified' ? 'chip--success' : ''}`} style={{ fontSize: '0.6rem', background: startup.verificationStatus !== 'verified' ? '#FEF3C7' : undefined, color: startup.verificationStatus !== 'verified' ? '#B45309' : undefined }}>
-                    {startup.verificationStatus === 'verified' ? '✓ Verified' : 'Pending Review'}
-                  </span>
-                </div>
-              )}
-              {startup.verificationDocuments?.founderIdUrl && (
-                <div className="startup-details__doc" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid var(--color-outline-variant)', borderRadius: '8px', marginBottom: '8px' }}>
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>badge</span>
-                    <div>
-                      <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>Founder Aadhaar / PAN</p>
-                      <p className="text-label-sm text-secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}><span className="material-symbols-outlined" style={{ fontSize: '14px' }}>lock</span> Securely held in vault</p>
+                  )}
+                  {startup.verificationDocuments?.founderIdUrl && (
+                    <div className="startup-details__doc" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid var(--color-outline-variant)', borderRadius: '8px', marginBottom: '8px' }}>
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>badge</span>
+                        <div>
+                          <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>Founder Aadhaar / PAN</p>
+                          <p className="text-label-sm text-secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}><span className="material-symbols-outlined" style={{ fontSize: '14px' }}>lock</span> Securely held in vault</p>
+                        </div>
+                      </div>
+                      <span className="chip" style={{ fontSize: '0.6rem', background: '#FEF3C7', color: '#B45309' }}>Pending Review</span>
                     </div>
-                  </div>
-                  <span className={`chip ${startup.verificationStatus === 'verified' ? 'chip--success' : ''}`} style={{ fontSize: '0.6rem', background: startup.verificationStatus !== 'verified' ? '#FEF3C7' : undefined, color: startup.verificationStatus !== 'verified' ? '#B45309' : undefined }}>
-                    {startup.verificationStatus === 'verified' ? '✓ Verified' : 'Pending Review'}
-                  </span>
-                </div>
-              )}
-              {startup.verificationDocuments?.pitchDeckUrl && (
-                <div className="startup-details__doc" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid var(--color-outline-variant)', borderRadius: '8px', marginBottom: '8px' }}>
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>presentation</span>
-                    <div>
-                      <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>Pitch Deck</p>
-                      <p className="text-label-sm text-secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}><span className="material-symbols-outlined" style={{ fontSize: '14px' }}>lock</span> Securely held in vault</p>
+                  )}
+                  {startup.verificationDocuments?.pitchDeckUrl && (
+                    <div className="startup-details__doc" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid var(--color-outline-variant)', borderRadius: '8px', marginBottom: '8px' }}>
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>presentation</span>
+                        <div>
+                          <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>Pitch Deck</p>
+                          <p className="text-label-sm text-secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}><span className="material-symbols-outlined" style={{ fontSize: '14px' }}>lock</span> Securely held in vault</p>
+                        </div>
+                      </div>
+                      <span className="chip" style={{ fontSize: '0.6rem', background: '#FEF3C7', color: '#B45309' }}>Pending Review</span>
                     </div>
-                  </div>
-                  <span className={`chip ${startup.verificationStatus === 'verified' ? 'chip--success' : ''}`} style={{ fontSize: '0.6rem', background: startup.verificationStatus !== 'verified' ? '#FEF3C7' : undefined, color: startup.verificationStatus !== 'verified' ? '#B45309' : undefined }}>
-                    {startup.verificationStatus === 'verified' ? '✓ Verified' : 'Pending Review'}
-                  </span>
-                </div>
-              )}
-              {startup.verificationDocuments?.bankStatementUrl && (
-                <div className="startup-details__doc" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid var(--color-outline-variant)', borderRadius: '8px', marginBottom: '8px' }}>
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>account_balance</span>
-                    <div>
-                      <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>Bank Statement</p>
-                      <p className="text-label-sm text-secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}><span className="material-symbols-outlined" style={{ fontSize: '14px' }}>lock</span> Securely held in vault</p>
+                  )}
+                  {startup.verificationDocuments?.bankStatementUrl && (
+                    <div className="startup-details__doc" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid var(--color-outline-variant)', borderRadius: '8px', marginBottom: '8px' }}>
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined" style={{ color: 'var(--color-on-tertiary-container)', fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>account_balance</span>
+                        <div>
+                          <p className="text-label-md" style={{ color: 'var(--color-on-surface)', margin: 0 }}>Bank Statement</p>
+                          <p className="text-label-sm text-secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}><span className="material-symbols-outlined" style={{ fontSize: '14px' }}>lock</span> Securely held in vault</p>
+                        </div>
+                      </div>
+                      <span className="chip" style={{ fontSize: '0.6rem', background: '#FEF3C7', color: '#B45309' }}>Pending Review</span>
                     </div>
-                  </div>
-                  <span className={`chip ${startup.verificationStatus === 'verified' ? 'chip--success' : ''}`} style={{ fontSize: '0.6rem', background: startup.verificationStatus !== 'verified' ? '#FEF3C7' : undefined, color: startup.verificationStatus !== 'verified' ? '#B45309' : undefined }}>
-                    {startup.verificationStatus === 'verified' ? '✓ Verified' : 'Pending Review'}
-                  </span>
-                </div>
-              )}
-              {(!startup.verificationDocuments || Object.keys(startup.verificationDocuments).length === 0) && (
-                <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--color-secondary)' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: '32px', opacity: 0.5, marginBottom: '8px' }}>folder_off</span>
-                  <p className="text-body-sm" style={{ margin: 0 }}>{startup.verificationStatus === 'verified' ? 'Documents protected & verified.' : 'No verification documents uploaded yet.'}</p>
-                </div>
+                  )}
+                  {(!startup.verificationDocuments || Object.keys(startup.verificationDocuments).length === 0) && (
+                    <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--color-secondary)' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '32px', opacity: 0.5, marginBottom: '8px' }}>folder_off</span>
+                      <p className="text-body-sm" style={{ margin: 0 }}>No verification documents uploaded yet.</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
