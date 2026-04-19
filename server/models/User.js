@@ -53,7 +53,8 @@ const userSchema = new mongoose.Schema(
       verifiedAt:  Date,
       documents:   [{ name: String, url: String, uploadedAt: Date }],
     },
-    wallet: { type: String, default: null },
+    // ── Virtual Wallet (₹1,00,000 pre-loaded on signup — investors only) ──
+    walletBalance: { type: Number, default: 100000 },
     notifications: [{
       message:   String,
       icon:      String,

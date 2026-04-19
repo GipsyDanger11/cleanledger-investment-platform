@@ -1,11 +1,13 @@
-const crypto = require('crypto');
 const Startup = require('../models/Startup');
+const User = require('../models/User');
 const FounderProfile = require('../models/FounderProfile');
-const AuditEntry = require('../models/AuditEntry');
+const { createBlock } = require('../utils/blockchain');
 const {
   sanitizeTeamMembersForStartup,
   sanitizeMilestonesForStartup,
 } = require('../utils/registrationMappers');
+const { analyzePitchText } = require('../services/pitchMistral');
+const { analyzeRedFlags } = require('../services/redFlagMistral');
 
 const STARTUP_WRITE_FIELDS = [
   'name',
@@ -89,12 +91,18 @@ exports.updateStartup = catchAsync(async (req, res) => {
     'name', 'category', 'sector', 'geography', 'description', 'tags', 'website',
     'registrationNumber',
     'teamSize',
-    'incorporationProofUrl', 'businessPlanUrl', 'businessPlanSummary',
-    'pitchDeckUrl', 'fundingTarget', 'fundingTimeline',
+    'verificationDocuments', 'fundingTarget', 'fundingTimeline',
     'fundAllocation', 'verificationStatus', 'documents',
   ];
   for (const key of allowed) {
     if (body[key] !== undefined) startup[key] = body[key];
+  }
+
+  // If any verification documents are added, switch status to in_review if it was unverified
+  if (body.verificationDocuments && Object.values(body.verificationDocuments).some(v => v !== null && v !== '')) {
+    if (startup.verificationStatus === 'unverified') {
+      startup.verificationStatus = 'in_review';
+    }
   }
   startup.calculateProfileScore();
   await startup.save();
@@ -106,6 +114,11 @@ exports.getStartup = catchAsync(async (req, res) => {
     .populate('createdBy', 'name email avatarUrl')
     .lean();
   if (!startup) return apiError(res, 404, 'Startup not found');
+
+  const FounderProfile = require('../models/FounderProfile');
+  const founderProfile = await FounderProfile.findOne({ user: startup.createdBy }).lean();
+  startup.founderProfile = founderProfile || null;
+
   res.json({ success: true, data: startup });
 });
 
@@ -130,17 +143,18 @@ exports.listStartups = catchAsync(async (req, res) => {
 });
 
 // ── R1: Admin — update verification status ───────────────
+// ── R1: Admin — update verification status ───────────────
 exports.updateVerificationStatus = catchAsync(async (req, res) => {
   const { status } = req.body;
   const valid = ['unverified', 'in_review', 'verified', 'rejected'];
   if (!valid.includes(status)) return apiError(res, 400, 'Invalid verification status');
 
-  const startup = await Startup.findByIdAndUpdate(
-    req.params.id,
-    { verificationStatus: status },
-    { new: true }
-  );
+  const startup = await Startup.findById(req.params.id);
   if (!startup) return apiError(res, 404, 'Startup not found');
+  
+  startup.verificationStatus = status;
+  startup.calculateProfileScore();
+  await startup.save();
   res.json({ success: true, data: startup });
 });
 
@@ -171,8 +185,22 @@ exports.addExpense = catchAsync(async (req, res) => {
   const validCats = ['tech', 'marketing', 'operations', 'legal'];
   if (!validCats.includes(category)) return apiError(res, 400, 'Invalid expense category');
 
+  const expenseAmount = Number(amount);
+  if (!expenseAmount || expenseAmount <= 0) return apiError(res, 400, 'Invalid expense amount');
+
+  // Deduct from founder's virtual wallet
+  const updatedUser = await User.findOneAndUpdate(
+    { _id: req.user._id, walletBalance: { $gte: expenseAmount } },
+    { $inc: { walletBalance: -expenseAmount } },
+    { new: true }
+  );
+
+  if (!updatedUser) {
+    return apiError(res, 400, 'Insufficient wallet balance. Top-up your virtual wallet to continue.');
+  }
+
   // Add expense
-  startup.expenses.push({ category, amount, description, receiptUrl });
+  startup.expenses.push({ category, amount: expenseAmount, description, receiptUrl });
 
   // Recalculate actual allocation for this category
   const catTotal = startup.expenses
@@ -184,24 +212,16 @@ exports.addExpense = catchAsync(async (req, res) => {
   // Check variance — flag if >20% deviation
   const newAlerts = startup.checkVariance();
 
-  // Write immutable audit entry
-  const lastEntry = await AuditEntry.findOne().sort({ blockNumber: -1 }).lean();
-  const blockNumber = (lastEntry?.blockNumber || 0) + 1;
-  const previousHash = lastEntry?.hash || '0000000000000000';
-  const payload = `${blockNumber}${category}${amount}${Date.now()}`;
-  const hash = crypto.createHash('sha256').update(payload).digest('hex');
-
-  await AuditEntry.create({
-    blockNumber,
-    type: 'funding_allocation',
-    fromEntity: req.user.name || req.user.email,
-    toEntity: startup.name,
+  // Write canonical blockchain block
+  await createBlock({
+    type:        'funding_allocation',
+    fromEntity:  req.user.name || req.user.email,
+    toEntity:    startup.name,
     amount,
-    hash,
-    previousHash,
-    startup: startup._id,
+    currency:    'INR',
+    metadata:    { category, description },
+    startupId:   startup._id,
     initiatedBy: req.user._id,
-    metadata: { category, description },
   });
 
   await startup.save();
@@ -281,17 +301,16 @@ exports.submitMilestoneProof = catchAsync(async (req, res) => {
   m.voteResult = 'pending';
   m.votes = [];
 
-  // Audit entry for submission
-  const lastEntry = await AuditEntry.findOne().sort({ blockNumber: -1 }).lean();
-  const blockNumber = (lastEntry?.blockNumber || 0) + 1;
-  const previousHash = lastEntry?.hash || '0000000000000000';
-  const payload = `${blockNumber}milestone_submit${m._id}${Date.now()}`;
-  const hash = crypto.createHash('sha256').update(payload).digest('hex');
-  await AuditEntry.create({
-    blockNumber, type: 'milestone_complete',
-    fromEntity: startup.name, toEntity: 'Investor Pool',
-    hash, previousHash, startup: startup._id, initiatedBy: req.user._id,
-    metadata: { milestoneId: m._id, title: m.title },
+  // Canonical blockchain block for milestone submission
+  await createBlock({
+    type:        'milestone_complete',
+    fromEntity:  startup.name,
+    toEntity:    'Investor Pool',
+    amount:      0,
+    currency:    'INR',
+    metadata:    { milestoneId: m._id.toString(), title: m.title },
+    startupId:   startup._id,
+    initiatedBy: req.user._id,
   });
 
   await startup.save();
@@ -365,4 +384,63 @@ exports.checkMissedMilestones = catchAsync(async (req, res) => {
     if (changed) await startup.save();
   }
   res.json({ success: true, message: `Flagged ${flagged} missed milestones` });
+});
+
+// ── R4: AI Pitch Analysis ───────────────────────────────────
+exports.analyzePitch = catchAsync(async (req, res) => {
+  const startup = await Startup.findOne({ _id: req.params.id, createdBy: req.user._id });
+  if (!startup) return apiError(res, 404, 'Startup not found or unauthorized');
+
+  const { pitchText } = req.body;
+  if (!pitchText) return apiError(res, 400, 'pitchText is required');
+
+  try {
+    const aiResult = await analyzePitchText(pitchText);
+    
+    // Store in DB mapping to the new schema
+    startup.aiAnalysis = {
+      summary: aiResult.summary || '',
+      strengths: aiResult.trustSignals || aiResult.keyPoints || [],
+      weaknesses: aiResult.riskFlags || [],
+      score: aiResult.viabilityScore || 0
+    };
+    
+    await startup.save();
+    res.json({ success: true, data: startup.aiAnalysis });
+  } catch (err) {
+    return apiError(res, 500, 'AI Analysis failed: ' + err.message);
+  }
+});
+
+// ── R4: AI Red Flag Analysis ────────────────────────────────
+exports.analyzeRedFlags = catchAsync(async (req, res) => {
+  const startup = await Startup.findOne({ _id: req.params.id, createdBy: req.user._id }).lean();
+  if (!startup) return apiError(res, 404, 'Startup not found or unauthorized');
+
+  const founder = await FounderProfile.findOne({ user: req.user._id }).lean();
+
+  const profileData = {
+    name: startup.name,
+    category: startup.category,
+    sector: startup.sector,
+    description: startup.description,
+    teamSize: startup.teamSize,
+    teamMembers: startup.teamMembers?.map(m => ({ name: m.name, role: m.role, hasLinkedIn: !!m.linkedIn })),
+    fundingTarget: startup.fundingTarget,
+    fundAllocation: startup.fundAllocation,
+    milestones: startup.milestones?.map(m => ({ title: m.title, tranchePct: m.tranchePct })),
+    aiSummary: startup.aiAnalysis?.summary || '',
+    founderTitle: founder?.founderTitle,
+    founderMission: founder?.founderMissionStatement,
+    leadershipYears: founder?.leadershipExperienceYears
+  };
+
+  const redFlags = await analyzeRedFlags(profileData);
+
+  // Update original document
+  const startupDoc = await Startup.findById(startup._id);
+  startupDoc.redFlags = redFlags;
+  await startupDoc.save();
+
+  res.json({ success: true, data: redFlags });
 });

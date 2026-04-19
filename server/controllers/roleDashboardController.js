@@ -13,7 +13,7 @@ const getAdminDashboard = async (req, res) => {
       Startup.countDocuments(),
       Investment.countDocuments(),
       User.find().select('name email role kyc.status createdAt').sort({ createdAt: -1 }).limit(50).lean(),
-      Startup.find().select('name sector verificationStatus trustScore totalRaised fundingTarget').lean(),
+      Startup.find().select('name sector verificationStatus trustScore totalRaised fundingTarget verificationDocuments').lean(),
     ]);
 
     const totalFundsRaised = startups.reduce((s, st) => s + (st.totalRaised || 0), 0);

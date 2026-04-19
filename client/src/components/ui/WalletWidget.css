@@ -1,0 +1,127 @@
+/* WalletWidget.css */
+
+.wallet-widget {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 78, 59, 0.08) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--space-5, 20px);
+  transition: border-color 0.2s ease;
+}
+
+.wallet-widget--low {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(120, 53, 15, 0.08) 100%);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.wallet-widget__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.wallet-widget__icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.wallet-widget__label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #10b981;
+  margin: 0 0 2px;
+}
+
+.wallet-widget--low .wallet-widget__label {
+  color: #f59e0b;
+}
+
+.wallet-widget__disclaimer {
+  font-size: 0.65rem;
+  color: var(--color-text-meta, #6B7280);
+  margin: 0;
+}
+
+.wallet-widget__low-badge {
+  margin-left: auto;
+  background: rgba(245, 158, 11, 0.18);
+  color: #f59e0b;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  flex-shrink: 0;
+}
+
+.wallet-widget__balance {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--color-on-surface, #E8EAED);
+  font-variant-numeric: tabular-nums;
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+}
+
+.wallet-widget__bar {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.wallet-widget__bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  border-radius: 999px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wallet-widget--low .wallet-widget__bar-fill {
+  background: linear-gradient(90deg, #f59e0b, #fcd34d);
+}
+
+.wallet-widget__sub {
+  font-size: 0.65rem;
+  color: var(--color-text-meta, #6B7280);
+  margin: 0;
+}
+
+/* ── Compact badge variant ─────────────────────────────────── */
+.wallet-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 999px;
+  padding: 4px 12px 4px 8px;
+  transition: background 0.2s;
+}
+
+.wallet-badge--low {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.wallet-badge__icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.wallet-badge__amount {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #10b981;
+  font-variant-numeric: tabular-nums;
+}
+
+.wallet-badge--low .wallet-badge__amount {
+  color: #f59e0b;
+}

@@ -174,8 +174,8 @@ export default function InvestorProfileCompletion() {
     (step === 1 && form.organization.trim() && form.entityType) ||
     (step === 2 && form.investmentRange && form.investmentFocus) ||
     (step === 3 &&
-      form.notablePortfolio.trim().length > 20 &&
-      form.investmentThesis.trim().length > 20 &&
+      form.notablePortfolio.trim().length > 1 &&
+      form.investmentThesis.trim().length > 1 &&
       form.yearsInvesting !== '' &&
       Number(form.yearsInvesting) >= 0) ||
     (step === 4 && form.linkedIn.trim() && form.accreditationStatus);

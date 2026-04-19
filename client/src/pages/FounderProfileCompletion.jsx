@@ -18,7 +18,7 @@ const CATEGORIES = ['FinTech','HealthTech','EdTech','AgriTech','CleanTech','SaaS
 const SECTORS    = ['Technology','Healthcare','Education','Agriculture','Finance','Real Estate','Retail','Other'];
 const TIMELINES  = ['6 months','12 months','18 months','24 months','36 months'];
 
-export default function FounderProfileCompletion() {
+export default function FounderProfileCompletion({ editing }) {
   const { user, updateProfile } = useAuth();
   const navigate = useNavigate();
   useEffect(() => {
@@ -31,7 +31,7 @@ export default function FounderProfileCompletion() {
       navigate('/dashboard', { replace: true });
       return;
     }
-    if (user.profileComplete) {
+    if (user.profileComplete && !editing) {
       navigate('/dashboard', { replace: true });
     }
   }, [user, navigate]);
@@ -56,7 +56,15 @@ export default function FounderProfileCompletion() {
     { name: '', role: '', linkedIn: '' },
   ]);
 
-  const [plan, setPlan] = useState({ businessPlanUrl: '', pitchText: '', pitchDeckUrl: '' });
+  const [plan, setPlan] = useState({ pitchText: '' });
+  
+  const [kycDocs, setKycDocs] = useState({
+    businessRegistration: null,
+    gstNumber: null,
+    founderId: null,
+    pitchDeck: null,
+    bankStatement: null,
+  });
 
   const [funds, setFunds] = useState({
     fundingTarget: '', fundingTimeline: '12 months',
@@ -144,7 +152,31 @@ export default function FounderProfileCompletion() {
       } else if (step === 2) {
         payload = { teamMembers: team.filter(t => t.name.trim()) };
       } else if (step === 3) {
-        payload = { businessPlanUrl: plan.businessPlanUrl, pitchDeckUrl: plan.pitchDeckUrl };
+        let uploadedUrls = {};
+        const hasFiles = Object.values(kycDocs).some(f => f !== null);
+        if (hasFiles) {
+          const fm = new FormData();
+          if (kycDocs.businessRegistration) fm.append('businessRegistration', kycDocs.businessRegistration);
+          if (kycDocs.gstNumber) fm.append('gstNumber', kycDocs.gstNumber);
+          if (kycDocs.founderId) fm.append('founderId', kycDocs.founderId);
+          if (kycDocs.pitchDeck) fm.append('pitchDeck', kycDocs.pitchDeck);
+          if (kycDocs.bankStatement) fm.append('bankStatement', kycDocs.bankStatement);
+          
+          const ur = await apiClient.post('/uploads/registration', fm, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          uploadedUrls = ur.data.urls;
+        }
+
+        payload = { 
+          verificationDocuments: {
+            businessRegistrationUrl: uploadedUrls.businessRegistrationUrl,
+            gstNumberUrl: uploadedUrls.gstNumberUrl,
+            founderIdUrl: uploadedUrls.founderIdUrl,
+            pitchDeckUrl: uploadedUrls.pitchDeckUrl,
+            bankStatementUrl: uploadedUrls.bankStatementUrl,
+          }
+        };
         if (aiAnalysis) payload.businessPlanSummary = aiAnalysis.summary;
       } else if (step === 4) {
         payload = {
@@ -188,7 +220,13 @@ export default function FounderProfileCompletion() {
         });
         const pr = await apiClient.get('/startups/me/profile');
         const sc = pr.data.data.profileCompletionScore || 0;
-        updateProfile({ profileComplete: sc >= 70, profileCompletionScore: sc });
+        updateProfile({ profileComplete: true, profileCompletionScore: sc });
+        
+        // --- Trigger Auto Red Flags Generation ---
+        if (startupId) {
+          await apiClient.post(`/startups/${startupId}/analyze-red-flags`).catch(e => console.warn('Red flags generation failed', e));
+        }
+
         navigate('/dashboard');
         setSaving(false);
         return;
@@ -211,18 +249,18 @@ export default function FounderProfileCompletion() {
 
   // ── AI Pitch Analyzer ────────────────────────────────────
   const analyzePitch = async () => {
-    if (!plan.pitchText.trim()) return;
+    if (!plan.pitchText.trim() || !startupId) return;
     setAiLoading(true); setAiAnalysis(null);
     try {
-      const { data } = await apiClient.post('/voice/summarize-pitch', {
-        text: plan.pitchText,
+      const { data } = await apiClient.post(`/startups/${startupId}/analyze-pitch`, {
+        pitchText: plan.pitchText,
       });
-      if (data.success) setAiAnalysis(data.analysis);
+      if (data.success) setAiAnalysis(data.data);
       else setError(data.message || 'AI analysis failed. You can continue without it.');
     } catch (err) {
       setError(
         err.response?.data?.message
-        || 'AI service unavailable. Start the Python service (server/ai_service) and ensure MISTRAL_API_KEY is set.',
+        || 'AI service unavailable. Ensure MISTRAL_API_KEY is set.',
       );
     }
     finally { setAiLoading(false); }
@@ -366,11 +404,6 @@ export default function FounderProfileCompletion() {
                       value={basic.website} onChange={e => setBasic(b => ({...b, website: e.target.value}))}/>
                   </div>
                 </div>
-                <div className="profile-field">
-                  <label className="profile-field__label">Incorporation Proof URL</label>
-                  <input className="profile-field__input" placeholder="Link to incorporation doc"
-                    value={basic.incorporationProofUrl} onChange={e => setBasic(b => ({...b, incorporationProofUrl: e.target.value}))}/>
-                </div>
               </div>
             </>
           )}
@@ -447,20 +480,20 @@ export default function FounderProfileCompletion() {
                   <div style={{background:'#F0F7FF', border:'1px solid #BBDEFB', borderRadius:'12px', padding:'16px'}}>
                     <div style={{fontWeight:700, color:'#1565C0', marginBottom:'8px', fontSize:'14px'}}>AI Analysis Complete</div>
                     <p style={{fontSize:'13px', color:'#333', lineHeight:1.6, marginBottom:'12px'}}>{aiAnalysis.summary}</p>
-                    {aiAnalysis.keyPoints?.length > 0 && (
+                    {aiAnalysis.strengths?.length > 0 && (
                       <div style={{marginBottom:'8px'}}>
                         <div style={{fontSize:'11px', fontWeight:700, color:'#555', textTransform:'uppercase', letterSpacing:'1px', marginBottom:'6px'}}>Key Points</div>
-                        {aiAnalysis.keyPoints.map((p, i) => (
+                        {aiAnalysis.strengths.map((p, i) => (
                           <div key={i} style={{display:'flex', gap:'6px', fontSize:'12px', color:'#333', marginBottom:'4px'}}>
                             <span className="material-symbols-outlined" style={{fontSize:'14px',color:'#4CAF50'}}>check_circle</span>{p}
                           </div>
                         ))}
                       </div>
                     )}
-                    {aiAnalysis.riskFlags?.length > 0 && (
+                    {aiAnalysis.weaknesses?.length > 0 && (
                       <div>
                         <div style={{fontSize:'11px', fontWeight:700, color:'#555', textTransform:'uppercase', letterSpacing:'1px', marginBottom:'6px'}}>Risk Flags</div>
-                        {aiAnalysis.riskFlags.map((r, i) => (
+                        {aiAnalysis.weaknesses.map((r, i) => (
                           <div key={i} style={{display:'flex', gap:'6px', fontSize:'12px', color:'#D32F2F', marginBottom:'4px'}}>
                             <span className="material-symbols-outlined" style={{fontSize:'14px',color:'#D32F2F'}}>warning</span>{r}
                           </div>
@@ -469,7 +502,7 @@ export default function FounderProfileCompletion() {
                     )}
                     <div style={{display:'flex', gap:'8px', marginTop:'12px', flexWrap:'wrap'}}>
                       <span style={{background:'#E3F2FD', color:'#1565C0', padding:'4px 10px', borderRadius:'999px', fontSize:'11px', fontWeight:600}}>
-                        Viability: {aiAnalysis.viabilityScore}/100
+                        Viability: {aiAnalysis.score}/100
                       </span>
                       <span style={{background:'#E8F5E9', color:'#2E7D32', padding:'4px 10px', borderRadius:'999px', fontSize:'11px', fontWeight:600}}>
                         {aiAnalysis.recommendedCategory}
@@ -478,17 +511,38 @@ export default function FounderProfileCompletion() {
                   </div>
                 )}
 
+                )}
+
+                <h3 style={{ marginTop: '24px', fontSize: '18px', fontWeight: 600, color: 'var(--color-on-surface)' }}>KYC & Verification Uploads</h3>
+                <p className="profile-form__subtitle">Providing these documents unlocks the "KYC Verified" badge, increasing your visibility to top investors.</p>
+                <div className="profile-row" style={{ marginTop: '16px' }}>
+                  <div className="profile-field">
+                    <label className="profile-field__label">Business Registration Certificate</label>
+                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="profile-field__input" style={{ padding: '8px' }}
+                      onChange={e => setKycDocs(d => ({...d, businessRegistration: e.target.files[0]}))}/>
+                  </div>
+                  <div className="profile-field">
+                    <label className="profile-field__label">GST Number (if applicable)</label>
+                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="profile-field__input" style={{ padding: '8px' }}
+                      onChange={e => setKycDocs(d => ({...d, gstNumber: e.target.files[0]}))}/>
+                  </div>
+                </div>
                 <div className="profile-row">
                   <div className="profile-field">
-                    <label className="profile-field__label">Business Plan URL</label>
-                    <input className="profile-field__input" placeholder="Google Drive / Notion link"
-                      value={plan.businessPlanUrl} onChange={e => setPlan(p => ({...p, businessPlanUrl: e.target.value}))}/>
+                    <label className="profile-field__label">Founder Aadhaar / PAN (masked)</label>
+                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="profile-field__input" style={{ padding: '8px' }}
+                      onChange={e => setKycDocs(d => ({...d, founderId: e.target.files[0]}))}/>
                   </div>
                   <div className="profile-field">
-                    <label className="profile-field__label">Pitch Deck URL</label>
-                    <input className="profile-field__input" placeholder="Slides link"
-                      value={plan.pitchDeckUrl} onChange={e => setPlan(p => ({...p, pitchDeckUrl: e.target.value}))}/>
+                    <label className="profile-field__label">Bank Statement (last 3 months)</label>
+                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="profile-field__input" style={{ padding: '8px' }}
+                      onChange={e => setKycDocs(d => ({...d, bankStatement: e.target.files[0]}))}/>
                   </div>
+                </div>
+                <div className="profile-field">
+                  <label className="profile-field__label">Pitch Deck (PDF)</label>
+                  <input type="file" accept=".pdf,.ppt,.pptx" className="profile-field__input" style={{ padding: '8px' }}
+                    onChange={e => setKycDocs(d => ({...d, pitchDeck: e.target.files[0]}))}/>
                 </div>
               </div>
             </>
@@ -718,7 +772,7 @@ export default function FounderProfileCompletion() {
                   saving ||
                   !founder.founderTitle.trim() ||
                   !founder.founderLinkedIn.trim() ||
-                  founder.founderMissionStatement.trim().length < 30 ||
+                  !founder.founderMissionStatement.trim() ||
                   founder.leadershipExperienceYears === '' ||
                   Number(founder.leadershipExperienceYears) < 0
                 }

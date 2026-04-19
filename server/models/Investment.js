@@ -7,7 +7,11 @@ const investmentSchema = new mongoose.Schema(
     startupName:   String,
     sector:        String,
     amount:        { type: Number, required: true },
-    currency:      { type: String, default: 'USD' },
+    currency:      { type: String, default: 'INR' },   // Virtual wallet uses INR
+
+    // ── Blockchain linkage ──────────────────────────────────────
+    blockHash:     { type: String, default: '' },       // SHA-256 hash of the chain block for this txn
+
     // R2 — tranche tagging
     trancheTag:    { type: String, default: '' },       // e.g. "Milestone 1 — MVP Launch"
     investorIdHash:{ type: String, default: '' },       // anonymised investor ID for public audit
@@ -15,6 +19,10 @@ const investmentSchema = new mongoose.Schema(
     trustScore:    { type: Number, default: 0 },
     status:        { type: String, enum: ['active', 'exited', 'pending'], default: 'active' },
     date:          { type: Date, default: Date.now },
+
+    // ── FHE encrypted identity ───────────────────────────────────
+    encryptedAmount: { type: String, default: '' }, // FHE ciphertext of investment amount
+    encryptedNoise:  { type: Number, default: 0  }, // KMS noise component (secret key material)
   },
   { timestamps: true }
 );

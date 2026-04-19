@@ -1,19 +1,22 @@
-const express = require('express');
-const router = express.Router();
-const { protect } = require('../middleware/authMiddleware');
-const Investment = require('../models/Investment');
+const express    = require('express');
+const router     = express.Router();
+const { protect, restrictTo } = require('../middleware/authMiddleware');
+const { invest, listInvestments, fheAggregate } = require('../controllers/investmentController');
+const { getWallet, topUpWallet } = require('../controllers/walletController');
 
-// GET /api/v1/investments — user's investments
-router.get('/', protect, async (req, res, next) => {
-  try {
-    const investments = await Investment.find({ investor: req.user._id })
-      .populate('startup', 'name sector geography trustScore esgScore verificationStatus fundingTarget totalRaised')
-      .sort({ date: -1 })
-      .lean();
-    res.json({ success: true, count: investments.length, data: investments });
-  } catch (err) {
-    next(err);
-  }
-});
+// GET  /api/v1/investments         — investor's portfolio
+router.get('/',       protect, listInvestments);
+
+// GET  /api/v1/investments/wallet  — virtual wallet balance
+router.get('/wallet',       protect, getWallet);
+
+// POST /api/v1/investments/wallet/topup  — top-up virtual wallet
+router.post('/wallet/topup', protect, topUpWallet);
+
+// POST /api/v1/investments         — place an investment (investor only)
+router.post('/',            protect, restrictTo('investor'), invest);
+
+// GET  /api/v1/investments/fhe-aggregate/:startupId  — homomorphic sum without decrypting individuals
+router.get('/fhe-aggregate/:startupId', protect, fheAggregate);
 
 module.exports = router;

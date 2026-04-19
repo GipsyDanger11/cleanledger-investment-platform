@@ -64,6 +64,25 @@ const AdminDashboard = () => {
     navigate('/auth', { replace: true });
   };
 
+  const handleVerifyStartup = async (startupId, status) => {
+    try {
+      const token = localStorage.getItem('cl_token');
+      const res = await fetch(`/api/v1/startups/${startupId}/verification`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status })
+      });
+      if (res.ok) {
+        // Refresh dashboard data instantly
+        const refresh = await fetch('/api/v1/dashboard/admin', { headers: { Authorization: `Bearer ${token}` } });
+        const data = await refresh.json();
+        setStats(data.data);
+      }
+    } catch (err) {
+      console.error('Failed to verify startup', err);
+    }
+  };
+
   return (
     <div className="admin-dash">
       <header className="admin-nav">
@@ -96,6 +115,60 @@ const AdminDashboard = () => {
         ))}
       </div>
 
+      <h2 className="admin-dash__section-title">Startup KYC Management</h2>
+      <div className="admin-table-wrap" style={{ marginBottom: '32px' }}>
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Startup Name</th>
+              <th>Sector</th>
+              <th>KYC Status</th>
+              <th>Verification Documents</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(stats?.startups || []).map((s) => (
+              <tr key={s._id}>
+                <td style={{ fontWeight: 600 }}>{s.name}</td>
+                <td>{s.sector}</td>
+                <td>
+                  <span className={`role-pill role-pill--${s.verificationStatus === 'verified' ? 'founder' : s.verificationStatus === 'in_review' ? 'investor' : 'unverified'}`}>
+                    {s.verificationStatus === 'in_review' ? 'UNDER REVIEW' : s.verificationStatus.toUpperCase()}
+                  </span>
+                </td>
+                <td>
+                  {s.verificationDocuments ? (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {s.verificationDocuments.businessRegistrationUrl && <a href={s.verificationDocuments.businessRegistrationUrl} target="_blank" rel="noreferrer" style={{ fontSize: '11px', background: '#F3F4F6', padding: '4px 8px', borderRadius: '4px', textDecoration: 'none' }}>Biz Reg</a>}
+                      {s.verificationDocuments.gstNumberUrl && <a href={s.verificationDocuments.gstNumberUrl} target="_blank" rel="noreferrer" style={{ fontSize: '11px', background: '#F3F4F6', padding: '4px 8px', borderRadius: '4px', textDecoration: 'none' }}>GST</a>}
+                      {s.verificationDocuments.founderIdUrl && <a href={s.verificationDocuments.founderIdUrl} target="_blank" rel="noreferrer" style={{ fontSize: '11px', background: '#F3F4F6', padding: '4px 8px', borderRadius: '4px', textDecoration: 'none' }}>ID</a>}
+                      {s.verificationDocuments.bankStatementUrl && <a href={s.verificationDocuments.bankStatementUrl} target="_blank" rel="noreferrer" style={{ fontSize: '11px', background: '#F3F4F6', padding: '4px 8px', borderRadius: '4px', textDecoration: 'none' }}>Bank</a>}
+                      {s.verificationDocuments.pitchDeckUrl && <a href={s.verificationDocuments.pitchDeckUrl} target="_blank" rel="noreferrer" style={{ fontSize: '11px', background: '#F3F4F6', padding: '4px 8px', borderRadius: '4px', textDecoration: 'none' }}>Pitch</a>}
+                    </div>
+                  ) : <span style={{ opacity: 0.5, fontSize: '13px' }}>No documents</span>}
+                </td>
+                <td>
+                  {s.verificationStatus !== 'verified' && (
+                    <button onClick={() => handleVerifyStartup(s._id, 'verified')} style={{ background: '#10B981', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, marginRight: '8px' }}>
+                      Verify
+                    </button>
+                  )}
+                  {s.verificationStatus === 'in_review' && (
+                    <button onClick={() => handleVerifyStartup(s._id, 'rejected')} style={{ background: '#EF4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}>
+                      Reject
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+            {(!stats?.startups || stats.startups.length === 0) && (
+              <tr><td colSpan="5" style={{ textAlign: 'center', opacity: 0.5 }}>No startups registered yet.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
       {/* User Management Table */}
       <h2 className="admin-dash__section-title">User Management</h2>
       <div className="admin-table-wrap">
@@ -105,7 +178,7 @@ const AdminDashboard = () => {
               <th>Name</th>
               <th>Email</th>
               <th>Role</th>
-              <th>KYC Status</th>
+              <th>System Status</th>
             </tr>
           </thead>
           <tbody>
@@ -116,7 +189,7 @@ const AdminDashboard = () => {
                 <td><span className={`role-pill role-pill--${u.role}`}>{u.role}</span></td>
                 <td>
                   <span className={`role-pill role-pill--${u.kycStatus === 'verified' ? 'founder' : 'investor'}`}>
-                    {u.kycStatus}
+                    Active
                   </span>
                 </td>
               </tr>

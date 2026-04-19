@@ -8,6 +8,7 @@ import { isFounderRole } from './utils/roles';
 import LandingPage          from './pages/LandingPage';
 import AuthPage             from './pages/AuthPage';
 import ProfileCompletion    from './pages/ProfileCompletion';
+import FounderProfileCompletion from './pages/FounderProfileCompletion';
 import AdminDashboard       from './pages/AdminDashboard';
 import FounderDashboard     from './pages/FounderDashboard';
 import InvestorDashboard    from './pages/InvestorDashboard';
@@ -82,6 +83,13 @@ export default function App() {
                   <FounderDashboard />
                 </RequireRole>
               } />
+              
+              <Route path="/edit-profile" element={
+                <RequireRole allowedRoles={['startup']}>
+                  <FounderProfileCompletion editing={true} />
+                </RequireRole>
+              } />
+
               <Route path="/investor-dashboard" element={
                 <RequireRole allowedRoles={['investor']}>
                   <InvestorDashboard />
